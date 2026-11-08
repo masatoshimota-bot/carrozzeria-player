@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+<meta name="theme-color" content="#060c0a">
+<meta name="description" content="懐かしいカーオーディオの操作感と、実際の音声に反応するスペクトラム表示を備えたローカル音楽プレーヤー">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>carrozzeria Retro Audio Player | Extended Spectrum</title>
+<style>
+:root{color-scheme:dark;--green:#96ffd0;--mint:#00faae;--amber:#f8c969;--line:#5d8275;--panel:#091510;--gray:#a9c1b7}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:#030504;color:#d5fbe9;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+body{overflow-x:hidden;background:radial-gradient(ellipse at 50% 35%,#182921 0%,#080d0c 49%,#020404 100%)}
+button,input{font:inherit}
+button{touch-action:manipulation;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+button:disabled{opacity:.35;cursor:not-allowed}
+.shell{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px 14px 18px}
+.header,.footer{width:min(100%,1420px);display:flex;justify-content:space-between;align-items:center;gap:14px}
+.header{height:40px;color:#a0cab7;letter-spacing:.08em;font-size:12px}
+.header b{color:#e4ffec;letter-spacing:.14em;font-weight:800;font-size:14px;text-shadow:0 0 12px #24ed89a6}
+.header .status{display:flex;align-items:center;gap:9px;font-variant-numeric:tabular-nums}
+.led{display:inline-block;height:9px;width:9px;border-radius:50%;background:#5c7367;box-shadow:0 0 0 3px #1e2e27}
+.led.live{background:#72ffac;box-shadow:0 0 8px 2px #3effa1}
+.faceplate{position:relative;flex:none;aspect-ratio:1624 / 560;width:min(96vw,1420px,calc((100dvh - 146px)*2.9));max-width:100%;border-radius:2.5% / 6%;background:#050909 url("faceplate.webp") center center / 100% 100% no-repeat;box-shadow:0 12px 45px #000c,0 0 0 1px #969f9926;overflow:hidden;user-select:none}
+.faceplate::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 1px 6px #f6fff24d}
+.livebox{position:absolute;display:flex;align-items:center;overflow:hidden;white-space:nowrap;background:#03100c;color:#9fffd4;font-family:"Courier New",monospace;font-weight:bold;text-shadow:0 0 7px #21ff9a82;line-height:1.05}
+.song{left:37.1%;top:20.8%;width:20.3%;height:9.8%;font-size:clamp(10px,1.45vw,22px);letter-spacing:.02em;padding-left:.45%}
+.artist{left:59.1%;top:20.9%;width:14.4%;height:9.8%;font-size:clamp(8px,1.07vw,17px);font-weight:400;padding-left:.3%}
+.track{left:77.5%;top:20.9%;width:7.6%;height:9.8%;font-size:clamp(8px,1vw,15px);justify-content:center}
+.volnum{left:85.1%;top:21.0%;height:8.8%;width:9.0%;justify-content:center;font-size:clamp(10px,1.7vw,25px);letter-spacing:.035em;text-shadow:0 0 8px #54faba;background:#03100c}
+.volnum::before{content:'VOL';font:700 .57em 'Courier New',monospace;color:#a5ead0;margin-right:.4em;letter-spacing:.03em}
+/* 24本のスペクトラムを右端まで拡張。左側ボタン群には手を加えない。 */
+.spectrum{position:absolute;left:32.9%;top:31.2%;width:56.0%;height:24.5%;background:#020d0a;display:block}
+.spectrum-labels{position:absolute;left:32.9%;top:55.55%;width:56.0%;height:7.5%;display:grid;grid-template-columns:repeat(11,minmax(0,1fr));align-items:center;background:#020d0a;border-top:1px solid #307f6a;box-shadow:inset 0 1px #2b785f33;color:#b1ffee;font:700 clamp(8px,1.02vw,15px)/1 'Courier New',monospace;text-shadow:0 0 5px #52efb780;pointer-events:none}
+.spectrum-labels span{text-align:center;min-width:0;white-space:nowrap}
+/* ボリューム数値を上段へ移し、伸ばした周波数バーと重ならないようにする。 */
+.eq-photo-menu{position:absolute;left:27.05%;top:31.9%;width:5.95%;height:30.2%;background:#03140f;border:1px solid #10a9a8;border-radius:3px;color:#c4fff2;display:flex;flex-direction:column;justify-content:space-around;align-items:center;font:700 clamp(7px,.96vw,14px)/1.1 monospace;text-shadow:0 0 5px #3afdb055}
+.eq-photo-menu span{display:block;width:92%;text-align:center;padding:1px 0}
+.eq-photo-menu .eq-heading{border:1px solid #4ed3f2;border-radius:3px;color:#a1f3f5}
+.eq-photo-menu span.on:not(.eq-heading){border:1px solid #74ffb4;border-radius:2px;box-shadow:0 0 5px #29ee896c;color:#d6ffe0}
+.dsp-status{position:absolute;left:89.2%;top:54.2%;width:7.5%;height:21%;display:flex;flex-direction:column;justify-content:space-around;background:#010d09;color:#b0b2aa;font:700 clamp(7px,.94vw,14px)/1.1 monospace;padding-left:.5%}
+.dsp-status span{white-space:nowrap}.dsp-status i{font-style:normal;color:#6f7064;padding-right:4px}.dsp-status span.on{color:#9affe0;text-shadow:0 0 5px #4cffaf}.dsp-status span.on i{color:#57ff92}
+.track-time{left:43.4%;top:65%;width:4.15%;height:7.5%;font-size:clamp(7px,1.15vw,18px);justify-content:center;font-variant-numeric:tabular-nums}
+.total-time{left:72.35%;top:65%;width:4.95%;height:7.5%;font-size:clamp(7px,1.12vw,18px);justify-content:center;font-variant-numeric:tabular-nums}
+.seek-panel{position:absolute;left:43%;top:64.5%;width:34.2%;height:8.1%;background:#03100c}
+.seek-wrap{position:absolute;left:48%;top:67%;width:24%;height:3.1%;border:1px solid #7c9f91;background:linear-gradient(90deg,var(--mint) 0%,var(--mint) 0%,#071e16 0%,#071e16 100%);border-radius:2px;box-shadow:inset 0 0 5px #0a0e0c,0 0 3px #28f29a73}
+.seek-wrap input{position:absolute;inset:-125% 0;width:100%;height:350%;margin:0;opacity:0;cursor:pointer;touch-action:none}
+.play-symbol{left:33.6%;top:65.9%;width:3.3%;height:5.5%;font-size:clamp(9px,1.6vw,25px);justify-content:center;background:#07130d}
+.hot{position:absolute;padding:0;border:0;background:transparent;border-radius:10px;z-index:2;touch-action:manipulation}
+.hot:active,.hot.selected{box-shadow:inset 0 0 12px #41ff9c91,0 0 6px #b1ffe58c;background:#1aff8230}
+.hot:focus-visible{outline:2px solid #72ffb7;outline-offset:-1px}
+.hot.info-pulse::before{content:"";position:absolute;inset:2px;border:2px solid #afffcf99;border-radius:inherit;animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{50%{opacity:.15}}
+.footer{min-height:60px;justify-content:center;flex-wrap:wrap;gap:9px}
+.tool{border:1px solid #476558;background:linear-gradient(#1c2924,#0d1511);border-radius:11px;color:#caefdb;padding:11px 15px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:650;box-shadow:inset 0 1px #ffffff18,0 4px 12px #0006}
+.tool:hover{border-color:#82caa3;background:linear-gradient(#243e31,#101c14)}
+.tool.primary{border-color:#39b879;color:#adffcb;background:linear-gradient(#214b37,#0a2618);text-shadow:0 0 10px #45f8949c}
+.tool .sym{font-size:18px}
+.hint{text-align:center;color:#79978b;font-size:11px;line-height:1.5;min-height:18px;padding:0 12px}
+.dimmer{position:fixed;inset:0;z-index:10;background:#000b;backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:12px}
+.dimmer.show{display:flex}
+.sheet{width:min(940px,100%);max-height:min(88dvh,800px);display:flex;flex-direction:column;background:linear-gradient(145deg,#13251b,#050b09 73%);border:1px solid #527766;border-radius:18px;box-shadow:0 16px 72px #000, inset 0 1px #a8ffb02c;overflow:hidden}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #254b34;gap:10px}
+.sheet-title{font-weight:800;letter-spacing:.09em;color:#a3f3bc;font-size:16px}
+.close{border:1px solid #537a62;border-radius:10px;background:#15291e;color:#d8ffe2;padding:8px 13px}
+.sheet-body{overflow-y:auto;padding:18px;overscroll-behavior:contain}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tab{color:#b2e7ca;background:#0c1f13;border:1px solid #3c6a4b;padding:9px 15px;border-radius:8px;min-height:42px}
+.tab.active{background:#24583c;color:#ecffed;border-color:#80df9d}
+.section{display:none}.section.active{display:block}
+.section p{line-height:1.65;color:#a7c2b1;font-size:13px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:15px}
+.action{border:1px solid #4d7460;background:#173627;color:#daffe7;border-radius:9px;padding:9px 13px;min-height:42px}
+.action.danger{color:#ffb7a8;border-color:#74483d;background:#2c1714}
+.songlist{display:flex;flex-direction:column;gap:6px}
+.songrow{display:flex;gap:8px;align-items:center;background:#07170e;border:1px solid #1d442d;border-radius:10px;padding:9px 10px}
+.songrow.current{border-color:#58ff8c;background:#183b23}
+.songrow .number{width:28px;text-align:center;font:14px monospace;color:#71c993}
+.songrow .name{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:0;background:transparent;color:#ebfff1;padding:10px 2px;font-size:14px}
+.songrow .meta{font-size:11px;color:#88b9a0;white-space:nowrap}
+.songrow button.remove{border:1px solid #615b58;color:#ffd3c6;background:#231913;border-radius:7px;padding:7px 10px}
+.empty{padding:30px;text-align:center;color:#8ab39a;border:1px dashed #386f4e;border-radius:12px}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 24px}
+.preset{border:1px solid #456e57;border-radius:9px;padding:9px 14px;background:#0b2115;color:#c5f2cf;min-height:39px}
+.preset.active{border-color:#67ff9e;box-shadow:0 0 9px #36f88766;color:white}
+.eq-bars{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:5px;align-items:end;border:1px solid #284b35;padding:14px 7px 10px;border-radius:12px;background:#07150d;min-height:246px}
+.eq-band{display:flex;flex-direction:column;align-items:center;justify-content:end;gap:10px;min-width:0}
+.eq-band label{font-family:monospace;color:#9af9b5;font-size:12px;font-weight:bold;white-space:nowrap}
+.eq-band input{writing-mode:vertical-lr;direction:rtl;appearance:slider-vertical;-webkit-appearance:slider-vertical;width:22px;height:145px;min-height:145px;accent-color:#52ffaa;cursor:pointer}
+.eq-band span{font-size:11px;color:#a2d7ba;font-family:monospace;white-space:nowrap}
+.toggles{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:20px;color:#bce2c8;font-size:13px}
+.toggles label{display:flex;gap:8px;align-items:center}
+.toggles input{accent-color:#62fca0;width:18px;height:18px}
+.notice{border-left:3px solid #7cba92;padding:9px 11px;color:#b0cebc;background:#091f12;font-size:12px;line-height:1.6;margin:12px 0}
+.helptext p{margin:0 0 12px}
+.helptext strong{color:#c3f8d0}
+.range-row{display:flex;align-items:center;gap:10px;color:#b5dac2;margin-top:10px;font-size:13px}
+.range-row input{flex:1;accent-color:#51ff98}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:11px 18px;border-radius:10px;z-index:30;max-width:min(90vw,480px);color:#f0ffef;background:#183b28;border:1px solid #5ba777;box-shadow:0 7px 25px #0009;font-size:13px;text-align:center;display:none}
+.toast.show{display:block}
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+@media(max-width:600px){.header{height:27px;font-size:10px}.header b{font-size:11px}.footer{gap:6px}.tool{min-height:39px;padding:7px 10px;font-size:12px}.shell{gap:10px;padding:7px}.sheet-body{padding:12px}.eq-bars{gap:1px;padding:12px 1px}.eq-band label,.eq-band span{font-size:9px}.eq-band input{width:17px}.hint{font-size:10px}.song{font-size:clamp(7px,1.45vw,15px)}}
+@media(max-height:460px) and (orientation:landscape){.shell{gap:4px;padding:3px}.header{height:24px}.footer{min-height:40px;gap:6px}.tool{min-height:34px;padding:4px 9px;font-size:11px}.hint{display:none}.faceplate{width:min(98vw,calc((100dvh - 84px)*2.9))}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="header"><b>RETRO DIGITAL AUDIO PLAYER</b><div class="status"><span id="led" class="led"></span><span id="statusText">STANDBY / LOCAL MUSIC</span><span id="clock" aria-label="時刻">--:--</span></div></header>
+  <main class="faceplate" id="faceplate" aria-label="レトロカーオーディオ風プレーヤー">
+    <div class="livebox song" id="songTitle" title="曲名">♫ ファイルを選択</div>
+    <div class="livebox artist" id="artistName" title="アーティスト">LOCAL AUDIO</div>
+    <div class="livebox track" id="trackNumber">00/00</div>
+    <canvas class="spectrum" id="spectrum" aria-label="実際の音声を解析し24本のバーが動くスペクトラムアナライザー"></canvas>
+    <div class="spectrum-labels" aria-hidden="true"><span>31</span><span>62</span><span>125</span><span>250</span><span>500</span><span>1k</span><span>2k</span><span>4k</span><span>8k</span><span>12.5k</span><span>16k</span></div>
+    <div class="eq-photo-menu" id="faceEQ"><span class="eq-heading">EQ</span><span data-eqmode="ROCK">ROCK</span><span data-eqmode="POP">POP</span><span data-eqmode="JAZZ">JAZZ</span><span data-eqmode="CLASSIC">CLASSIC</span><span data-eqmode="USER">USER</span></div>
+    <div class="dsp-status"><span id="dsp3d"><i>●</i>3D</span><span id="dspSurround"><i>●</i>SURROUND</span><span id="dspBass"><i>●</i>BASS XT</span></div>
+    <div class="livebox volnum" id="volumeNumber">20</div>
+    <div class="seek-panel" aria-hidden="true"></div>
+    <div class="livebox track-time" id="currentTime">00:00</div>
+    <div class="seek-wrap" id="seekWrap"><input id="seek" aria-label="再生位置" type="range" min="0" max="1000" value="0"></div>
+    <div class="livebox total-time" id="totalTime">00:00</div>
+    <div class="livebox play-symbol" id="playSymbol">▶</div>
+    <!-- 写真のボタン位置に重ねた実際に押せる透明タッチ領域 -->
+    <button class="hot" style="left:4.8%;top:15%;width:4%;height:8%" data-act="power" title="電源 / 一時停止" aria-label="電源 / 一時停止"></button>
+    <button class="hot" style="left:8.9%;top:21%;width:4.3%;height:17%" data-act="volumeUp" title="音量を上げる" aria-label="音量を上げる"></button>
+    <button class="hot" style="left:8.9%;top:45.2%;width:4.3%;height:17%" data-act="volumeDown" title="音量を下げる" aria-label="音量を下げる"></button>
+    <button class="hot" style="left:3%;top:37.7%;width:7.1%;height:9.5%" data-act="prev" title="前の曲" aria-label="前の曲"></button>
+    <button class="hot" style="left:12.6%;top:37.7%;width:7.0%;height:9.5%" data-act="next" title="次の曲" aria-label="次の曲"></button>
+    <button class="hot" style="left:14.4%;top:17%;width:4.3%;height:11%" data-act="playlist" title="MENU: 曲一覧" aria-label="曲一覧を開く"></button>
+    <button class="hot" style="left:19%;top:29%;width:4.0%;height:12%" data-act="eq" title="EQ 設定" aria-label="音質設定を開く"></button>
+    <button class="hot" style="left:18%;top:48%;width:4.1%;height:13%" data-act="eq" title="EQ 設定" aria-label="音質設定を開く"></button>
+    <button class="hot" style="left:4%;top:67%;width:6%;height:13%" data-act="volumeDown" title="VOL −" aria-label="音量を下げる"></button>
+    <button class="hot" style="left:16%;top:67%;width:6%;height:13%" data-act="volumeUp" title="VOL ＋" aria-label="音量を上げる"></button>
+    <button class="hot" style="left:27%;top:64%;width:5.9%;height:8.4%" data-act="prev" title="前へ" aria-label="前の曲"></button>
+    <button class="hot" style="left:33.2%;top:64%;width:4%;height:8.4%" data-act="play" title="再生 / 一時停止" aria-label="再生 / 一時停止"></button>
+    <button class="hot" style="left:37%;top:64%;width:5.8%;height:8.4%" data-act="next" title="次へ" aria-label="次の曲"></button>
+    <button class="hot" style="left:78%;top:64%;width:3.0%;height:9%" data-act="repeat" title="リピート" aria-label="リピート切替" id="repeatHot"></button>
+    <button class="hot" style="left:81%;top:64%;width:3.1%;height:9%" data-act="shuffle" title="シャッフル" aria-label="シャッフル切替" id="shuffleHot"></button>
+    <button class="hot" style="left:27%;top:82%;width:8%;height:12%" data-act="play" title="1 再生" aria-label="再生"></button>
+    <button class="hot" style="left:37.2%;top:82%;width:8%;height:12%" data-act="pause" title="2 一時停止" aria-label="一時停止"></button>
+    <button class="hot" style="left:47.4%;top:82%;width:8%;height:12%" data-act="shuffle" title="3 シャッフル" aria-label="シャッフル切替"></button>
+    <button class="hot" style="left:57.6%;top:82%;width:8%;height:12%" data-act="repeat" title="4 リピート" aria-label="リピート切替"></button>
+    <button class="hot" style="left:67.8%;top:82%;width:8%;height:12%" data-act="playlist" title="5 曲一覧" aria-label="曲一覧"></button>
+    <button class="hot" style="left:78%;top:82%;width:8%;height:12%" data-act="eq" title="6 音質設定" aria-label="音質設定"></button>
+    <button class="hot" style="left:88.1%;top:82%;width:9.0%;height:12%" data-act="import" title="SOURCE: 音楽ファイルを選択" aria-label="音楽ファイルを選択"></button>
+    <button class="hot" style="left:94.4%;top:21%;width:3.8%;height:13%" data-act="fullscreen" title="画面表示切り替え" aria-label="全画面切替"></button>
+    <button class="hot" style="left:94.4%;top:34%;width:3.8%;height:13%" data-act="help" title="ヘルプ" aria-label="ヘルプ"></button>
+    <button class="hot" style="left:87%;top:56%;width:9%;height:5.8%" data-act="spatial" id="spatialHot" title="3D 空間効果" aria-label="3D 音響切替"></button>
+    <button class="hot" style="left:87%;top:62%;width:9%;height:5.5%" data-act="surround" id="surroundHot" title="サラウンド効果" aria-label="サラウンド切替"></button>
+    <button class="hot" style="left:87%;top:68.2%;width:9%;height:5.8%" data-act="bass" id="bassHot" title="低音ブースト" aria-label="低音ブースト切替"></button>
+    <button class="hot" style="left:27.5%;top:38%;width:5.4%;height:7%" data-act="preset:ROCK" title="ROCK"></button>
+    <button class="hot" style="left:27.5%;top:43%;width:5.4%;height:7%" data-act="preset:POP" title="POP"></button>
+    <button class="hot" style="left:27.5%;top:47.8%;width:5.4%;height:7%" data-act="preset:JAZZ" title="JAZZ"></button>
+    <button class="hot" style="left:27.5%;top:53%;width:5.4%;height:7%" data-act="preset:CLASSIC" title="CLASSIC"></button>
+    <button class="hot" style="left:27.5%;top:57.5%;width:5.4%;height:6%" data-act="eq" title="USER: カスタムEQ"></button>
+  </main>
+  <div class="footer">
+    <button id="importButton" class="tool primary"><span class="sym">♫</span> 音楽を追加</button>
+    <button id="demoButton" class="tool"><span class="sym">▶</span> 動作デモ</button>
+    <button id="playlistButton" class="tool"><span class="sym">☷</span> 曲一覧 <span id="songCount">(0)</span></button>
+    <button id="eqButton" class="tool"><span class="sym">▥</span> 11 BAND EQ</button>
+    <button id="fullscreenButton" class="tool"><span class="sym">⛶</span> 全画面</button>
+  </div>
+  <div class="hint" id="hint">音楽ファイルを追加すると、再生中の音に合わせてイコライザー表示が動きます。音楽ファイルは端末内から選択できます。</div>
+</div>
+<input class="visually-hidden" type="file" id="fileInput" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple>
+<audio id="audio" preload="metadata" playsinline></audio>
+<div class="dimmer" id="dimmer" role="presentation">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head"><span id="sheetTitle" class="sheet-title">PLAYER MENU</span><button id="closeSheet" class="close" aria-label="閉じる">✕ 閉じる</button></div>
+    <div class="sheet-body">
+      <nav class="tabs" aria-label="メニュー"><button class="tab active" data-tab="playlist">曲一覧 / 保存</button><button class="tab" data-tab="eq">11 BAND EQ / 音質</button><button class="tab" data-tab="help">使い方</button></nav>
+      <section id="panel-playlist" class="section active">
+        <div class="actions"><button class="action" id="addSongs">＋ 音楽を追加</button><button class="action" id="saveAll">⬇ 曲を端末に保存</button><button class="action" id="loadStored">↻ 保存曲を読み込む</button><button class="action danger" id="clearSongs">一覧をクリア</button></div>
+        <div class="notice">通常追加した曲はこの画面を閉じても再生できますが、ブラウザを終了すると再選択が必要です。「端末に保存」を押すとブラウザの保存領域に音楽データを保存し、次回起動時にも読み込めます。容量制限があります。</div>
+        <div id="playlistContent" class="songlist"></div>
+      </section>
+      <section id="panel-eq" class="section">
+        <div class="notice">これは表示だけではありません。11バンドのフィルターで実際の再生音を調整します。中央の緑色のバーは、音楽信号を解析したスペクトラム表示です。</div>
+        <div id="presetButtons" class="presets"></div>
+        <div class="eq-bars" id="eqSliders"></div>
+        <div class="toggles"><label><input type="checkbox" id="bassToggle"> BASS XT（低音強調）</label><label><input type="checkbox" id="spatialToggle"> 3D（軽い空間効果）</label><label><input type="checkbox" id="surroundToggle"> SURROUND（残響を追加）</label></div>
+        <div class="range-row"><label for="volumeRange">音量</label><input id="volumeRange" type="range" min="0" max="100" value="50"><span id="volumePercent">50%</span></div>
+      </section>
+      <section id="panel-help" class="section helptext">
+        <p><strong>① 音楽を追加</strong><br>画面下の「音楽を追加」またはパネル右下の「SOURCE」を押し、端末の音楽ファイルを選びます。MP3・M4A・WAVなどに対応し、FLACなどは端末のブラウザの対応状況によります。</p>
+        <p><strong>② 再生操作</strong><br>銀色の 1 は再生、2 は一時停止、3 はシャッフル、4 はリピート、5 は曲一覧、6 は音質設定です。左側の緑色ボタンで曲送り・音量調整ができます。</p>
+        <p><strong>③ 動くスペクトラム</strong><br>再生音そのものをWeb Audio APIで分析しています。再生していないときはバーが静止します。別のアプリやBluetooth機器で再生中の音声は取得できません。</p>
+        <p><strong>④ イコライザー</strong><br>11バンドを各±12dBで調整できます。ROCK / POP / JAZZ / CLASSIC / FLAT / USER を選択できます。音量を上げすぎると音割れするためご注意ください。</p>
+        <p><strong>⑤ OTTOCASTでの利用</strong><br>AndroidアプリやChrome系ブラウザを利用できるOTTOCAST AI Boxなどで開いてください。単純なワイヤレスCarPlay変換アダプターにはブラウザやアプリ実行機能がない製品があります。運転中の操作は避けてください。</p>
+        <p><strong>⑥ オフライン利用</strong><br>HTTPSで公開してホーム画面に追加すると、対応ブラウザでオフライン起動できます。ブラウザ保存した曲は端末の保存データを消すと失われます。単体HTMLファイルならブラウザから直接開いて利用できます。</p>
+      </section>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const audio=$('audio'),canvas=$('spectrum'),ctx=canvas.getContext('2d');
+const FREQ=[31,62,125,250,500,1000,2000,4000,8000,12500,16000];
+const LABEL=['31','62','125','250','500','1k','2k','4k','8k','12.5k','16k'];
+const SPECTRUM_FREQ=Array.from({length:24},(_,i)=>30*Math.pow(18000/30,i/23)); // 表示は24本、音質調整は従来の11バンド
+const PRESETS={FLAT:[0,0,0,0,0,0,0,0,0,0,0],ROCK:[5,4,2,0,-2,-1,2,3,4,3,2],POP:[-1,1,3,4,2,0,1,3,2,1,0],JAZZ:[3,2,1,0,-2,-1,1,3,4,3,2],CLASSIC:[3,3,2,1,0,0,-1,-1,2,3,3],USER:[0,0,0,0,0,0,0,0,0,0,0]};
+let tracks=[],active=-1,context=null,source=null,analyser=null,master=null,filters=[],bassFilter=null,reverb=null,reverbGain=null,frequencies=null;
+let smoothed=SPECTRUM_FREQ.map(()=>0),peaks=SPECTRUM_FREQ.map(()=>0),isShuffle=false,repeatMode=0,isBass=false,isSpatial=false,isSurround=false,preset='FLAT',eqValues=[...PRESETS.FLAT],vol=50,sheetTab='playlist',toastTimer=0,raf=0,lastFrame=0,dbPromise=null;
+const canStore='indexedDB' in window;
+try{const s=JSON.parse(localStorage.getItem('retroplayer-settings')||'{}');if(Number.isFinite(s.volume))vol=Math.max(0,Math.min(100,s.volume));if(s.preset in PRESETS)preset=s.preset;if(Array.isArray(s.eq)&&s.eq.length===11)eqValues=s.eq.map(v=>Math.max(-12,Math.min(12,Number(v)||0)));else eqValues=[...PRESETS[preset]];isShuffle=!!s.shuffle;repeatMode=Math.max(0,Math.min(2,s.repeat||0));isBass=!!s.bass;isSpatial=!!s.spatial;isSurround=!!s.surround;}catch(e){}
+function persist(){try{localStorage.setItem('retroplayer-settings',JSON.stringify({volume:vol,preset,eq:eqValues,shuffle:isShuffle,repeat:repeatMode,bass:isBass,spatial:isSpatial,surround:isSurround}));}catch(e){}}
+function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),3000)}
+function timetext(s){if(!Number.isFinite(s))return '00:00';let n=Math.max(0,Math.floor(s));return `${Math.floor(n/60).toString().padStart(2,'0')}:${(n%60).toString().padStart(2,'0')}`}
+function decodeName(filename){let b=filename.replace(/\.[^.]+$/,'');let p=b.split(/\s+-\s+/);return {title:p.length>=2?p.slice(1).join(' - '):b,artist:p.length>=2?p[0]:'LOCAL AUDIO'}}
+function setStatus(txt){$('statusText').textContent=txt}
+function setVolume(n){vol=Math.max(0,Math.min(100,Math.round(n)));if(master)master.gain.setTargetAtTime(vol/100,context.currentTime,.025);$('volumeNumber').textContent=String(Math.round(vol*.4)).padStart(2,'0');$('volumeRange').value=vol;$('volumePercent').textContent=vol+'%';persist()}
+function updateClock(){const d=new Date();$('clock').textContent=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',hour12:false})}updateClock();setInterval(updateClock,30000);
+function initAudio(){if(context)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC){toast('このブラウザはWeb Audio APIに対応していません');return}context=new AC();source=context.createMediaElementSource(audio);let previous=source;filters=FREQ.map((f,i)=>{const node=context.createBiquadFilter();node.type=i===0?'lowshelf':i===10?'highshelf':'peaking';node.frequency.value=f;if(i!==0&&i!==10)node.Q.value=1.25;node.gain.value=eqValues[i];previous.connect(node);previous=node;return node});bassFilter=context.createBiquadFilter();bassFilter.type='lowshelf';bassFilter.frequency.value=100;bassFilter.gain.value=isBass?5:0;previous.connect(bassFilter);
+  analyser=context.createAnalyser();analyser.fftSize=8192;analyser.smoothingTimeConstant=.68;analyser.minDecibels=-98;analyser.maxDecibels=-18;frequencies=new Uint8Array(analyser.frequencyBinCount);bassFilter.connect(analyser);
+  reverb=context.createConvolver();reverb.buffer=createImpulse(context,.66,1.8);reverbGain=context.createGain();reverbGain.gain.value=0;bassFilter.connect(reverb);reverb.connect(reverbGain);reverbGain.connect(analyser);
+  master=context.createGain();master.gain.value=vol/100;analyser.connect(master);master.connect(context.destination);syncEffects();
+}
+function createImpulse(ac,duration,decay){const rate=ac.sampleRate,len=Math.floor(rate*duration),buf=ac.createBuffer(2,len,rate);for(let ch=0;ch<2;ch++){let arr=buf.getChannelData(ch);for(let i=0;i<len;i++){const t=i/len;let gate=(i%1129<10?.28:0);arr[i]=((Math.random()*2-1)*.18+gate*(Math.random()*2-1))*Math.pow(1-t,decay)}}return buf}
+function syncEffects(){if(!context)return;bassFilter.gain.setTargetAtTime(isBass?5:0,context.currentTime,.035);reverbGain.gain.setTargetAtTime(isSurround?.25:isSpatial?.11:0,context.currentTime,.035)}
+function updateTrack(){const t=tracks[active];$('songTitle').textContent=t?'♫ '+t.title:'♫ ファイルを選択';$('songTitle').title=t?t.title:'ファイルを追加してください';$('artistName').textContent=t?t.artist:'LOCAL AUDIO';$('trackNumber').textContent=String(t?active+1:0).padStart(2,'0')+'/'+String(tracks.length).padStart(2,'0');$('songCount').textContent='('+tracks.length+')';$('hint').textContent=t?'曲: '+t.title+' | 音声解析連動 | EQ: '+preset:'音楽ファイルを追加すると、再生中の音に合わせてイコライザー表示が動きます。';updateMediaSession();renderList()}
+function updateMediaSession(){if(!('mediaSession' in navigator))return;const t=tracks[active];if(t){try{navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:t.artist,album:'carrozzeria RETRO PLAYER'});}catch(e){}}}
+function addTrack(blob,override){const names=decodeName(blob.name||'音楽');let t={blob,title:override?.title||names.title,artist:override?.artist||names.artist,uri:URL.createObjectURL(blob),saved:!!override?.saved,id:override?.id||null};tracks.push(t);return t}
+function loadTrack(index,autoplay=true){if(index<0||index>=tracks.length)return;active=index;audio.src=tracks[index].uri;audio.load();$('currentTime').textContent='00:00';$('totalTime').textContent='00:00';$('seek').value=0;updateSeek();updateTrack();if(autoplay)play()}
+async function play(){if(!tracks.length){$('fileInput').click();toast('まず音楽ファイルを選択してください');return}try{initAudio();if(!context)return;await context.resume();if(active<0)loadTrack(0,false);await audio.play();}catch(err){toast('再生できません: '+(err?.message||err))}}
+function pause(){audio.pause()}
+function playPause(){audio.paused?play():pause()}
+function next(direction=1){if(!tracks.length)return;let n=active;if(isShuffle&&tracks.length>1){do{n=Math.floor(Math.random()*tracks.length)}while(n===active)}else{n=active+direction;if(n<0)n=tracks.length-1;if(n>=tracks.length)n=0}loadTrack(n,true)}
+function syncTransport(){const playing=!audio.paused&&!audio.ended;$('playSymbol').textContent=playing?'Ⅱ':'▶';$('led').classList.toggle('live',playing);setStatus(playing?'PLAYING / REAL-TIME FFT':'READY / LOCAL MUSIC');if('mediaSession' in navigator)try{navigator.mediaSession.playbackState=playing?'playing':'paused'}catch(e){} }
+function updateSeek(){let r=(audio.duration&&Number.isFinite(audio.duration))?Math.max(0,Math.min(1,audio.currentTime/audio.duration)):0;$('seekWrap').style.background=`linear-gradient(90deg,#52ffad 0%,#52ffad ${r*100}%,#0c261b ${r*100}%,#0c261b 100%)`}
+function updateTime(){$('currentTime').textContent=timetext(audio.currentTime);$('totalTime').textContent=timetext(audio.duration);$('seek').value=Number.isFinite(audio.duration)&&audio.duration>0?Math.round(audio.currentTime/audio.duration*1000):0;updateSeek()}
+audio.addEventListener('play',syncTransport);audio.addEventListener('pause',syncTransport);audio.addEventListener('durationchange',updateTime);audio.addEventListener('timeupdate',updateTime);audio.addEventListener('error',()=>{if(audio.src)toast('この形式は再生できません。MP3やM4Aなどをお試しください')});audio.addEventListener('ended',()=>{if(repeatMode===2){audio.currentTime=0;play()}else if(active<tracks.length-1||isShuffle||repeatMode===1)next(1);else syncTransport()});
+$('seek').addEventListener('input',ev=>{if(Number.isFinite(audio.duration)&&audio.duration>0){audio.currentTime=Number(ev.target.value)/1000*audio.duration;updateTime()}});
+function formatFileSize(n){return n>=1048576?(n/1048576).toFixed(1)+'MB':(n/1024).toFixed(0)+'KB'}
+function renderList(){const e=$('playlistContent');e.replaceChildren();if(!tracks.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='まだ曲がありません。「音楽を追加」から端末の曲を選択してください。';e.append(empty);return}
+  tracks.forEach((t,i)=>{const row=document.createElement('div');row.className='songrow'+(i===active?' current':'');const num=document.createElement('span');num.className='number';num.textContent=String(i+1).padStart(2,'0');const main=document.createElement('button');main.className='name';main.textContent=t.title+' · '+t.artist;main.title=t.title;main.addEventListener('click',()=>{loadTrack(i,true);closeSheet()});const meta=document.createElement('span');meta.className='meta';meta.textContent=(t.saved?'保存済 · ':'')+formatFileSize(t.blob.size);const del=document.createElement('button');del.className='remove';del.textContent='削除';del.title='曲一覧から削除';del.addEventListener('click',()=>removeTrack(i));row.append(num,main,meta,del);e.append(row)})}
+async function removeTrack(i){const t=tracks[i];if(!t)return;if(t.saved&&t.id!==null)await deleteFromDB(t.id).catch(()=>{});const wasActive=active===i;tracks.splice(i,1);URL.revokeObjectURL(t.uri);if(wasActive){audio.pause();audio.removeAttribute('src');audio.load();active=-1;if(tracks.length)loadTrack(Math.min(i,tracks.length-1),false)}else if(active>i)active--;updateTrack()}
+async function importFiles(list){const files=Array.from(list||[]).filter(f=>f instanceof Blob&&f.size>0);if(!files.length)return;const start=tracks.length;for(const f of files)addTrack(f);updateTrack();closeSheet();toast(files.length+' 曲追加しました');if(active<0)loadTrack(start,true)}
+$('fileInput').addEventListener('change',async e=>{await importFiles(e.target.files);e.target.value=''});
+function dispatch(a){if(a.startsWith('preset:')){usePreset(a.split(':')[1]);return}switch(a){case 'power':case 'play':playPause();break;case 'pause':pause();break;case 'prev':next(-1);break;case 'next':next(1);break;case 'volumeUp':setVolume(vol+5);break;case 'volumeDown':setVolume(vol-5);break;case 'import':$('fileInput').click();break;case 'playlist':openSheet('playlist');break;case 'eq':openSheet('eq');break;case 'help':openSheet('help');break;case 'fullscreen':fullscreen();break;case 'shuffle':isShuffle=!isShuffle;persist();syncToggles();toast('シャッフル '+(isShuffle?'ON':'OFF'));break;case 'repeat':repeatMode=(repeatMode+1)%3;persist();syncToggles();toast(['リピート OFF','全曲リピート','1曲リピート'][repeatMode]);break;case 'bass':isBass=!isBass;syncEffects();persist();syncToggles();toast('BASS XT '+(isBass?'ON':'OFF'));break;case 'spatial':isSpatial=!isSpatial;if(isSpatial)isSurround=false;syncEffects();persist();syncToggles();toast('3D '+(isSpatial?'ON':'OFF'));break;case 'surround':isSurround=!isSurround;if(isSurround)isSpatial=false;syncEffects();persist();syncToggles();toast('SURROUND '+(isSurround?'ON':'OFF'));break;}}
+for(const h of document.querySelectorAll('[data-act]'))h.addEventListener('click',()=>dispatch(h.dataset.act));
+$('importButton').addEventListener('click',()=>dispatch('import'));
+$('playlistButton').addEventListener('click',()=>dispatch('playlist'));
+$('eqButton').addEventListener('click',()=>dispatch('eq'));
+$('fullscreenButton').addEventListener('click',()=>dispatch('fullscreen'));
+$('addSongs').addEventListener('click',()=>dispatch('import'));
+$('closeSheet').addEventListener('click',closeSheet);
+$('dimmer').addEventListener('pointerdown',e=>{if(e.target===$('dimmer'))closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='BUTTON'){e.preventDefault();playPause()}});
+function fullscreen(){const el=document.documentElement;try{if(!document.fullscreenElement){const f=el.requestFullscreen||el.webkitRequestFullscreen;const result=f?.call(el);result?.catch?.(()=>toast('この端末では全画面表示が許可されません'))}else document.exitFullscreen?.()}catch(e){toast('この端末では全画面表示が許可されません')}}
+function openSheet(tab){$('dimmer').classList.add('show');document.body.style.overflow='hidden';showTab(tab);$('closeSheet').focus({preventScroll:true})}
+function closeSheet(){$('dimmer').classList.remove('show');document.body.style.overflow=''}
+function showTab(tab){sheetTab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));for(const t of ['playlist','eq','help'])$('panel-'+t).classList.toggle('active',t===tab);$('sheetTitle').textContent={playlist:'MUSIC LIBRARY',eq:'11 BAND GRAPHIC EQUALIZER',help:'HOW TO USE'}[tab];if(tab==='playlist')renderList();if(tab==='eq'){renderEQ();syncToggles()}}
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+function syncToggles(){document.querySelectorAll('[data-eqmode]').forEach(el=>el.classList.toggle('on',el.dataset.eqmode===preset));$('dsp3d').classList.toggle('on',isSpatial);$('dspSurround').classList.toggle('on',isSurround);$('dspBass').classList.toggle('on',isBass);$('bassToggle').checked=isBass;$('spatialToggle').checked=isSpatial;$('surroundToggle').checked=isSurround;$('repeatHot').classList.toggle('selected',repeatMode!==0);$('shuffleHot').classList.toggle('selected',isShuffle);$('bassHot').classList.toggle('selected',isBass);$('spatialHot').classList.toggle('selected',isSpatial);$('surroundHot').classList.toggle('selected',isSurround)}
+for(const [id,act] of [['bassToggle','bass'],['spatialToggle','spatial'],['surroundToggle','surround']])$(id).addEventListener('change',()=>dispatch(act));
+$('volumeRange').addEventListener('input',e=>setVolume(Number(e.target.value)));
+function usePreset(name){if(!(name in PRESETS))return;preset=name;if(name!=='USER')eqValues=[...PRESETS[name]];applyEQ();renderEQ();syncToggles();toast('EQ: '+name);persist()}
+function applyEQ(){if(context)filters.forEach((f,i)=>f.gain.setTargetAtTime(eqValues[i],context.currentTime,.03))}
+function renderEQ(){const panel=$('eqSliders');panel.replaceChildren();FREQ.forEach((f,i)=>{const cell=document.createElement('div');cell.className='eq-band';const val=document.createElement('label');val.textContent=(eqValues[i]>0?'+':'')+eqValues[i]+'dB';const slider=document.createElement('input');slider.type='range';slider.min='-12';slider.max='12';slider.step='1';slider.value=eqValues[i];slider.setAttribute('aria-label',LABEL[i]+' Hz の音量');slider.addEventListener('input',()=>{eqValues[i]=Number(slider.value);val.textContent=(eqValues[i]>0?'+':'')+eqValues[i]+'dB';preset='USER';applyEQ();updatePresetUI();syncToggles();persist()});const name=document.createElement('span');name.textContent=LABEL[i];cell.append(val,slider,name);panel.append(cell)});updatePresetUI()}
+function updatePresetUI(){const p=$('presetButtons');p.replaceChildren();for(const name of Object.keys(PRESETS)){let b=document.createElement('button');b.className='preset'+(preset===name?' active':'');b.textContent=name;b.addEventListener('click',()=>usePreset(name));p.append(b)}}
+function getDB(){if(!canStore)return Promise.reject(new Error('このブラウザは端末への保存に対応していません'));if(dbPromise)return dbPromise;dbPromise=new Promise((resolve,reject)=>{const request=indexedDB.open('ottocast_retro_audio',1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('tracks'))request.result.createObjectStore('tracks',{keyPath:'id',autoIncrement:true})};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});return dbPromise}
+async function getStored(){let db=await getDB();return new Promise((resolve,reject)=>{let tx=db.transaction('tracks','readonly'),req=tx.objectStore('tracks').getAll();req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function saveOne(t){const db=await getDB();return new Promise((resolve,reject)=>{const tx=db.transaction('tracks','readwrite');const rec={blob:t.blob,name:t.blob.name||t.title,title:t.title,artist:t.artist};if(t.id!=null)rec.id=t.id;const req=tx.objectStore('tracks').put(rec);req.onsuccess=()=>{t.id=req.result;t.saved=true};tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
+async function deleteFromDB(id){const db=await getDB();return new Promise((resolve,reject)=>{const tx=db.transaction('tracks','readwrite');tx.objectStore('tracks').delete(id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
+async function loadStored(silent=false){try{const recs=await getStored();let count=0;for(const r of recs){if(tracks.some(t=>t.id===r.id&&t.saved))continue;let blob=r.blob;if(blob&&blob.size){addTrack(blob,{title:r.title,artist:r.artist,id:r.id,saved:true});count++}}updateTrack();if(!silent)toast(count?count+' 曲読み込みました':'新しい保存曲はありません')}catch(e){if(!silent)toast('保存曲を読み込めません: '+e.message)}}
+$('saveAll').addEventListener('click',async()=>{if(!tracks.length){toast('保存する曲がありません');return}const b=$('saveAll');b.disabled=true;b.textContent='保存中...';let n=0;try{for(const t of tracks){if(!t.saved){await saveOne(t);n++}}toast(n+' 曲を端末内に保存しました')}catch(e){toast('容量不足か保存エラーです: '+e.message)}finally{b.disabled=false;b.textContent='⬇ 曲を端末に保存';renderList()}});
+$('loadStored').addEventListener('click',()=>loadStored());
+$('clearSongs').addEventListener('click',async()=>{if(!tracks.length)return;if(!confirm('曲一覧をクリアしますか？保存済みの曲データは端末内に残ります。'))return;audio.pause();audio.removeAttribute('src');audio.load();tracks.forEach(t=>URL.revokeObjectURL(t.uri));tracks=[];active=-1;updateTrack()});
+if(canStore)loadStored(true);
+// 音響信号を実際にFFT解析し、音の強弱に合わせて縦方向のセグメントを更新する。
+function resizeCanvas(){const r=canvas.getBoundingClientRect();if(r.width<=0)return;const dpr=Math.min(window.devicePixelRatio||1,2.5);let w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}ctx.setTransform(dpr,0,0,dpr,0,0)}
+function spectrumValues(){
+  if(!context||!analyser||audio.paused||audio.ended)return SPECTRUM_FREQ.map(()=>0);
+  analyser.getByteFrequencyData(frequencies);
+  const nyquist=context.sampleRate/2,hzPerBin=nyquist/frequencies.length;
+  return SPECTRUM_FREQ.map((freq,i)=>{
+    const lo=i===0?22:Math.sqrt(SPECTRUM_FREQ[i-1]*freq);
+    const hi=i===SPECTRUM_FREQ.length-1?Math.min(20000,nyquist):Math.sqrt(freq*SPECTRUM_FREQ[i+1]);
+    let a=Math.max(1,Math.floor(lo/hzPerBin)),b=Math.min(frequencies.length-1,Math.ceil(hi/hzPerBin));
+    if(b<a)b=a;
+    let max=0,total=0,n=0;
+    for(let j=a;j<=b;j++){const v=frequencies[j];max=Math.max(max,v);total+=v;n++}
+    const level=(max*.58+(total/Math.max(1,n))*.42)/255;
+    return Math.max(0,Math.min(1,(level-.055)*1.26));
+  });
+}
+function drawSpectrum(now){raf=requestAnimationFrame(drawSpectrum);const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;if(canvas.width===0||Math.abs(canvas.width-r.width*(Math.min(window.devicePixelRatio||1,2.5)))>3)resizeCanvas();let w=r.width,h=r.height;if(!w||!h)return;const d=Math.min((now-lastFrame||16)/1000,.1);lastFrame=now;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#020e0b';ctx.fillRect(0,0,w,h);
+  const bands=SPECTRUM_FREQ.length,left=3,gap=Math.max(2,w*.0034),barW=(w-left*2-gap*(bands-1))/bands,segH=Math.max(2.1,h/35),segGap=Math.max(1.3,h/58);let unit=segH+segGap,maxSeg=Math.floor((h-8)/unit);
+  const raw=spectrumValues();
+  for(let i=0;i<bands;i++){const val=raw[i];smoothed[i]=val>smoothed[i]?smoothed[i]*.44+val*.56:smoothed[i]*.79+val*.21;if(val<.005)smoothed[i]*=.89;let target=Math.min(maxSeg,Math.floor(smoothed[i]*maxSeg));peaks[i]=Math.max(peaks[i]-d*10,target);let x=left+i*(barW+gap);
+    for(let j=0;j<maxSeg;j++){let y=h-4-j*unit-segH;ctx.fillStyle='rgba(7,37,27,.44)';ctx.fillRect(x,y,barW,segH);if(j<target){let t=j/maxSeg;let color=t>.87?'#ffd877':t>.68?'#9bffbe':'#44ffd2';ctx.fillStyle=color;ctx.shadowColor=t>.87?'#ffbf58':'#0affae';ctx.shadowBlur=5;ctx.fillRect(x,y,barW,segH);ctx.shadowBlur=0}}
+    let peakY=h-4-Math.floor(peaks[i])*unit-segH;if(target>0&&peakY>0){ctx.fillStyle='#ffde8c';ctx.fillRect(x,peakY,barW,Math.max(2,segH*.62))}
+  }
+}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);document.addEventListener('visibilitychange',()=>{if(!document.hidden)resizeCanvas()});raf=requestAnimationFrame(drawSpectrum);
+// 一から合成した短いデモ音源（外部の楽曲は一切使用しない）
+function createDemo(){const rate=22050,seconds=12,n=rate*seconds,pcm=new Int16Array(n);const notes=[196,246.94,293.66,392,329.63,293.66,246.94,196,174.61,220,261.63,349.23,293.66,261.63,220,174.61];for(let i=0;i<n;i++){const time=i/rate,beat=time*2.5,idx=Math.floor(beat)%notes.length,phase=beat%1,f=notes[idx];const env=Math.pow(1-phase,1.1);let melody=(Math.sin(2*Math.PI*f*time)+.22*Math.sin(2*Math.PI*f*2*time))*env*.23;let bass=Math.sin(2*Math.PI*(Math.floor(beat/4)%2?98:87.31)*time)*.12;let kick=.19*Math.sin(2*Math.PI*(68-40*Math.min(1,(beat%4)*2))*time)*Math.exp(-14*(beat%4));let y=Math.max(-.9,Math.min(.9,melody+bass+kick));pcm[i]=Math.round(y*32767)}let bytes=new ArrayBuffer(44+pcm.byteLength),v=new DataView(bytes);const word=(p,s)=>{for(let i=0;i<s.length;i++)v.setUint8(p+i,s.charCodeAt(i))};word(0,'RIFF');v.setUint32(4,bytes.byteLength-8,true);word(8,'WAVE');word(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);word(36,'data');v.setUint32(40,pcm.byteLength,true);new Int16Array(bytes,44).set(pcm);return new File([bytes],'RETRO DEMO - Original Synth.wav',{type:'audio/wav'})}
+$('demoButton').addEventListener('click',()=>{if(!tracks.some(t=>t.title==='Original Synth')){const f=createDemo();addTrack(f)}loadTrack(tracks.findIndex(t=>t.title==='Original Synth'),true);toast('オリジナルのデモ音源を再生します')});
+setVolume(vol);updateTrack();syncToggles();syncTransport();
+if('mediaSession' in navigator){for(const [action,fn] of [['play',play],['pause',pause],['previoustrack',()=>next(-1)],['nexttrack',()=>next(1)]]){try{navigator.mediaSession.setActionHandler(action,fn)}catch(e){}}}
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+})()
+</script>
+</body>
+</html>
