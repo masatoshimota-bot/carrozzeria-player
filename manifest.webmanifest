@@ -1,6 +1,6 @@
 {
-  "name": "carrozzeria Retro Audio Player",
-  "short_name": "carrozzeria",
+  "name": "carrozzeria U2-PLUS Audio Spectrum",
+  "short_name": "carrozzeria FFT",
   "description": "レトロカーオーディオ風のオフライン音楽プレーヤー。音に反応するスペクトラムと11バンドEQを搭載。",
   "lang": "ja",
   "start_url": "./index.html",

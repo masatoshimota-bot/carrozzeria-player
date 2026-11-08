@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
-<title>carrozzeria Retro Audio Player | Extended Spectrum</title>
+<title>carrozzeria | U2-PLUS 外部音声スペアナ</title>
 <style>
 :root{color-scheme:dark;--green:#96ffd0;--mint:#00faae;--amber:#f8c969;--line:#5d8275;--panel:#091510;--gray:#a9c1b7}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -107,11 +107,28 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(max-width:600px){.header{height:27px;font-size:10px}.header b{font-size:11px}.footer{gap:6px}.tool{min-height:39px;padding:7px 10px;font-size:12px}.shell{gap:10px;padding:7px}.sheet-body{padding:12px}.eq-bars{gap:1px;padding:12px 1px}.eq-band label,.eq-band span{font-size:9px}.eq-band input{width:17px}.hint{font-size:10px}.song{font-size:clamp(7px,1.45vw,15px)}}
 @media(max-height:460px) and (orientation:landscape){.shell{gap:4px;padding:3px}.header{height:24px}.footer{min-height:40px;gap:6px}.tool{min-height:34px;padding:4px 9px;font-size:11px}.hint{display:none}.faceplate{width:min(98vw,calc((100dvh - 84px)*2.9))}}
+
+/* U2-PLUS: 音の入力ソースを明確にし、誤ってYouTube内部音声を取得したと見せない */
+.tool.mic-tool{border-color:#b38a45;color:#ffe8b0;background:linear-gradient(#42351c,#1c1a0d)}
+.tool.mic-tool.active{border-color:#70ffc0;color:#aeffdd;background:linear-gradient(#1b6249,#0c3227);box-shadow:0 0 12px #1dfba455}
+.mode-live{display:inline-flex;align-items:center;gap:5px;font:700 11px monospace;letter-spacing:.08em;color:#d4ffd7;white-space:nowrap}
+.mode-live.mic-on{color:#ffdf9a;text-shadow:0 0 7px #ffbd4c7a}
+.mode-live .dot{height:7px;width:7px;background:#566c61;border-radius:50%}
+.mode-live.mic-on .dot{background:#ffbf58;box-shadow:0 0 8px #f8a940}
+.mic-guide{border:1px solid #7a6840;background:#28210e;color:#ffedc6;padding:13px 15px;border-radius:11px;line-height:1.7;margin:12px 0 16px;font-size:13px}
+.mic-guide strong{color:#ffe4a8}
+.mic-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.mic-actions .action{min-width:160px}
+.mic-actions .action.primary{border-color:#78ce91;background:#1a4830;color:#ebffed}
+.mic-lamp{border:1px solid #496b56;border-radius:9px;padding:11px 13px;color:#b1d7c4;background:#0a1a12;font:700 12px monospace}
+.mic-lamp.active{border-color:#f4c46d;color:#ffe2a1;background:#38270e}
+.mic-small{margin-top:14px;font-size:12px;color:#aec7b5;line-height:1.7}
+@media(max-width:600px){.header .mode-live{font-size:9px}}
 </style>
 </head>
 <body>
 <div class="shell">
-  <header class="header"><b>RETRO DIGITAL AUDIO PLAYER</b><div class="status"><span id="led" class="led"></span><span id="statusText">STANDBY / LOCAL MUSIC</span><span id="clock" aria-label="時刻">--:--</span></div></header>
+  <header class="header"><b>RETRO DIGITAL AUDIO PLAYER</b><div class="status"><span class="mode-live" id="modeLive"><span class="dot"></span><span id="modeText">LOCAL</span></span><span id="led" class="led"></span><span id="statusText">STANDBY / LOCAL MUSIC</span><span id="clock" aria-label="時刻">--:--</span></div></header>
   <main class="faceplate" id="faceplate" aria-label="レトロカーオーディオ風プレーヤー">
     <div class="livebox song" id="songTitle" title="曲名">♫ ファイルを選択</div>
     <div class="livebox artist" id="artistName" title="アーティスト">LOCAL AUDIO</div>
@@ -163,6 +180,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div class="footer">
     <button id="importButton" class="tool primary"><span class="sym">♫</span> 音楽を追加</button>
     <button id="demoButton" class="tool"><span class="sym">▶</span> 動作デモ</button>
+    <button id="micButton" class="tool mic-tool" aria-pressed="false"><span class="sym">◉</span> マイク解析を開始</button>
     <button id="playlistButton" class="tool"><span class="sym">☷</span> 曲一覧 <span id="songCount">(0)</span></button>
     <button id="eqButton" class="tool"><span class="sym">▥</span> 11 BAND EQ</button>
     <button id="fullscreenButton" class="tool"><span class="sym">⛶</span> 全画面</button>
@@ -175,7 +193,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="sheet-head"><span id="sheetTitle" class="sheet-title">PLAYER MENU</span><button id="closeSheet" class="close" aria-label="閉じる">✕ 閉じる</button></div>
     <div class="sheet-body">
-      <nav class="tabs" aria-label="メニュー"><button class="tab active" data-tab="playlist">曲一覧 / 保存</button><button class="tab" data-tab="eq">11 BAND EQ / 音質</button><button class="tab" data-tab="help">使い方</button></nav>
+      <nav class="tabs" aria-label="メニュー"><button class="tab active" data-tab="playlist">曲一覧 / 保存</button><button class="tab" data-tab="eq">11 BAND EQ / 音質</button><button class="tab" data-tab="mic">外部音声（マイク）</button><button class="tab" data-tab="help">使い方</button></nav>
       <section id="panel-playlist" class="section active">
         <div class="actions"><button class="action" id="addSongs">＋ 音楽を追加</button><button class="action" id="saveAll">⬇ 曲を端末に保存</button><button class="action" id="loadStored">↻ 保存曲を読み込む</button><button class="action danger" id="clearSongs">一覧をクリア</button></div>
         <div class="notice">通常追加した曲はこの画面を閉じても再生できますが、ブラウザを終了すると再選択が必要です。「端末に保存」を押すとブラウザの保存領域に音楽データを保存し、次回起動時にも読み込めます。容量制限があります。</div>
@@ -188,13 +206,23 @@ button:disabled{opacity:.35;cursor:not-allowed}
         <div class="toggles"><label><input type="checkbox" id="bassToggle"> BASS XT（低音強調）</label><label><input type="checkbox" id="spatialToggle"> 3D（軽い空間効果）</label><label><input type="checkbox" id="surroundToggle"> SURROUND（残響を追加）</label></div>
         <div class="range-row"><label for="volumeRange">音量</label><input id="volumeRange" type="range" min="0" max="100" value="50"><span id="volumePercent">50%</span></div>
       </section>
+      <section id="panel-mic" class="section">
+        <div class="mic-guide"><strong>YouTubeアプリの音声データを直接取得する機能ではありません。</strong>
+          車内のスピーカーから流れるYouTube等の音を、ブラウザが利用できる<strong>マイクで拾って</strong>24本のスペアナに反映します。
+          U2-PLUSに利用可能なマイクがなければ使えません。ブラウザでマイクを許可してください。
+          YouTubeアプリに切り替えると、このブラウザ画面は通常は見えなくなり、解析も停止・制限される場合があります。</div>
+        <div class="mic-actions"><button class="action primary" id="micPanelToggle">◉ マイク解析を開始</button><span class="mic-lamp" id="micState" aria-live="polite">MIC: OFF</span></div>
+        <div class="range-row"><label for="micGain">マイク感度</label><input id="micGain" type="range" min="50" max="400" value="175" step="5"><span id="micGainValue">175%</span></div>
+        <p class="mic-small">※マイク音声はスピーカーに再出力しません。録音・保存・外部送信も行いません。11バンドEQはアプリ内で再生する音楽にのみ適用されます。</p>
+      </section>
       <section id="panel-help" class="section helptext">
         <p><strong>① 音楽を追加</strong><br>画面下の「音楽を追加」またはパネル右下の「SOURCE」を押し、端末の音楽ファイルを選びます。MP3・M4A・WAVなどに対応し、FLACなどは端末のブラウザの対応状況によります。</p>
         <p><strong>② 再生操作</strong><br>銀色の 1 は再生、2 は一時停止、3 はシャッフル、4 はリピート、5 は曲一覧、6 は音質設定です。左側の緑色ボタンで曲送り・音量調整ができます。</p>
         <p><strong>③ 動くスペクトラム</strong><br>再生音そのものをWeb Audio APIで分析しています。再生していないときはバーが静止します。別のアプリやBluetooth機器で再生中の音声は取得できません。</p>
-        <p><strong>④ イコライザー</strong><br>11バンドを各±12dBで調整できます。ROCK / POP / JAZZ / CLASSIC / FLAT / USER を選択できます。音量を上げすぎると音割れするためご注意ください。</p>
-        <p><strong>⑤ OTTOCASTでの利用</strong><br>AndroidアプリやChrome系ブラウザを利用できるOTTOCAST AI Boxなどで開いてください。単純なワイヤレスCarPlay変換アダプターにはブラウザやアプリ実行機能がない製品があります。運転中の操作は避けてください。</p>
-        <p><strong>⑥ オフライン利用</strong><br>HTTPSで公開してホーム画面に追加すると、対応ブラウザでオフライン起動できます。ブラウザ保存した曲は端末の保存データを消すと失われます。単体HTMLファイルならブラウザから直接開いて利用できます。</p>
+        <p><strong>④ 外部音声（マイク）</strong><br>画面下の「マイク解析を開始」を押し、マイクの利用を許可すると、周囲の音に24本のバーが反応します。YouTubeや他のアプリの内部音声は取得できません。外部音声モードではEQは適用されません。ブラウザのマイク機能はHTTPS公開時に使用してください。</p>
+        <p><strong>⑤ イコライザー</strong><br>11バンドを各±12dBで調整できます。ROCK / POP / JAZZ / CLASSIC / FLAT / USER を選択できます。音量を上げすぎると音割れするためご注意ください。</p>
+        <p><strong>⑥ OTTOCASTでの利用</strong><br>AndroidアプリやChrome系ブラウザを利用できるOTTOCAST AI Boxなどで開いてください。単純なワイヤレスCarPlay変換アダプターにはブラウザやアプリ実行機能がない製品があります。運転中の操作は避けてください。</p>
+        <p><strong>⑦ オフライン利用</strong><br>HTTPSで公開してホーム画面に追加すると、対応ブラウザでオフライン起動できます。ブラウザ保存した曲は端末の保存データを消すと失われます。単体HTMLファイルならブラウザから直接開いて利用できます。</p>
       </section>
     </div>
   </div>
@@ -209,6 +237,7 @@ const LABEL=['31','62','125','250','500','1k','2k','4k','8k','12.5k','16k'];
 const SPECTRUM_FREQ=Array.from({length:24},(_,i)=>30*Math.pow(18000/30,i/23)); // 表示は24本、音質調整は従来の11バンド
 const PRESETS={FLAT:[0,0,0,0,0,0,0,0,0,0,0],ROCK:[5,4,2,0,-2,-1,2,3,4,3,2],POP:[-1,1,3,4,2,0,1,3,2,1,0],JAZZ:[3,2,1,0,-2,-1,1,3,4,3,2],CLASSIC:[3,3,2,1,0,0,-1,-1,2,3,3],USER:[0,0,0,0,0,0,0,0,0,0,0]};
 let tracks=[],active=-1,context=null,source=null,analyser=null,master=null,filters=[],bassFilter=null,reverb=null,reverbGain=null,frequencies=null;
+let inputMode="local",micStream=null,micContext=null,micSource=null,micAnalyser=null,micSilent=null,micFrequencies=null,micRequestId=0,micSensitivity=1.75;
 let smoothed=SPECTRUM_FREQ.map(()=>0),peaks=SPECTRUM_FREQ.map(()=>0),isShuffle=false,repeatMode=0,isBass=false,isSpatial=false,isSurround=false,preset='FLAT',eqValues=[...PRESETS.FLAT],vol=50,sheetTab='playlist',toastTimer=0,raf=0,lastFrame=0,dbPromise=null;
 const canStore='indexedDB' in window;
 try{const s=JSON.parse(localStorage.getItem('retroplayer-settings')||'{}');if(Number.isFinite(s.volume))vol=Math.max(0,Math.min(100,s.volume));if(s.preset in PRESETS)preset=s.preset;if(Array.isArray(s.eq)&&s.eq.length===11)eqValues=s.eq.map(v=>Math.max(-12,Math.min(12,Number(v)||0)));else eqValues=[...PRESETS[preset]];isShuffle=!!s.shuffle;repeatMode=Math.max(0,Math.min(2,s.repeat||0));isBass=!!s.bass;isSpatial=!!s.spatial;isSurround=!!s.surround;}catch(e){}
@@ -217,6 +246,70 @@ function toast(m){const e=$('toast');e.textContent=m;e.classList.add('show');cle
 function timetext(s){if(!Number.isFinite(s))return '00:00';let n=Math.max(0,Math.floor(s));return `${Math.floor(n/60).toString().padStart(2,'0')}:${(n%60).toString().padStart(2,'0')}`}
 function decodeName(filename){let b=filename.replace(/\.[^.]+$/,'');let p=b.split(/\s+-\s+/);return {title:p.length>=2?p.slice(1).join(' - '):b,artist:p.length>=2?p[0]:'LOCAL AUDIO'}}
 function setStatus(txt){$('statusText').textContent=txt}
+function updateModeUI(){
+  const on=inputMode==='mic';
+  $('modeLive').classList.toggle('mic-on',on);
+  $('modeText').textContent=on?'MIC / LIVE':'LOCAL';
+  $('micButton').classList.toggle('active',on);
+  $('micButton').setAttribute('aria-pressed',String(on));
+  $('micButton').innerHTML=on?'<span class="sym">■</span> マイク解析を停止':'<span class="sym">◉</span> マイク解析を開始';
+  $('micPanelToggle').textContent=on?'■ マイク解析を停止':'◉ マイク解析を開始';
+  $('micState').textContent=on?'MIC: LIVE / 周囲の音':'MIC: OFF';
+  $('micState').classList.toggle('active',on);
+  $('micGainValue').textContent=Math.round(micSensitivity*100)+'%';
+  $('micGain').value=Math.round(micSensitivity*100);
+}
+function stopMic(showMessage=false){
+  // 解析用マイクのストリームだけを停止する。録音や再生はしていない。
+  micRequestId++;
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null}
+  try{micSource?.disconnect();micAnalyser?.disconnect();micSilent?.disconnect()}catch(e){}
+  micSource=null;micAnalyser=null;micSilent=null;micFrequencies=null;
+  const c=micContext;micContext=null;
+  if(c&&c.state!=='closed')c.close().catch(()=>{});
+  inputMode='local';smoothed.fill(0);peaks.fill(0);
+  updateModeUI();updateTrack();syncTransport();
+  if(showMessage)toast('マイク解析を停止しました');
+}
+async function startMic(){
+  if(inputMode==='mic'){stopMic(true);return}
+  if(!navigator.mediaDevices?.getUserMedia){
+    toast('マイクを利用できません。HTTPSのURLとU2-PLUSのマイク対応を確認してください');
+    openSheet('mic');return;
+  }
+  const req=++micRequestId;
+  $('micState').textContent='MIC: 許可待ち…';
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});
+    if(req!==micRequestId){stream.getTracks().forEach(t=>t.stop());return}
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)throw new Error('このブラウザはWeb Audio API非対応です');
+    let ac=new AC();micContext=ac;micStream=stream;
+    micSource=ac.createMediaStreamSource(stream);
+    micAnalyser=ac.createAnalyser();micAnalyser.fftSize=8192;micAnalyser.smoothingTimeConstant=.7;micAnalyser.minDecibels=-100;micAnalyser.maxDecibels=-20;
+    micFrequencies=new Uint8Array(micAnalyser.frequencyBinCount);
+    // マイクを再生してしまうと車内でハウリングするため、無音出力の解析専用経路にする。
+    micSilent=ac.createGain();micSilent.gain.value=0;
+    micSource.connect(micAnalyser);micAnalyser.connect(micSilent);micSilent.connect(ac.destination);
+    await ac.resume();
+    if(req!==micRequestId){stopMic();return}
+    stream.getAudioTracks().forEach(t=>t.addEventListener('ended',()=>{if(inputMode==='mic')stopMic(true)}));
+    audio.pause();inputMode='mic';smoothed.fill(0);peaks.fill(0);
+    updateModeUI();updateTrack();syncTransport();closeSheet();
+    toast('マイク解析中：周囲の音にバーが反応します');
+  }catch(e){
+    if(req!==micRequestId)return;
+    stopMic();
+    $('micState').textContent='MIC: 利用できません';
+    toast(e?.name==='NotAllowedError'?'マイク許可が拒否されました':e?.name==='NotFoundError'?'利用可能なマイクが見つかりません':'マイクを開始できません: '+(e?.message||e));
+    openSheet('mic');
+  }
+}
+function toggleMic(){if(inputMode==='mic')stopMic(true);else startMic()}
+$('micButton').addEventListener('click',toggleMic);
+$('micPanelToggle').addEventListener('click',toggleMic);
+$('micGain').addEventListener('input',e=>{micSensitivity=Number(e.target.value)/100;$('micGainValue').textContent=e.target.value+'%';});
+
 function setVolume(n){vol=Math.max(0,Math.min(100,Math.round(n)));if(master)master.gain.setTargetAtTime(vol/100,context.currentTime,.025);$('volumeNumber').textContent=String(Math.round(vol*.4)).padStart(2,'0');$('volumeRange').value=vol;$('volumePercent').textContent=vol+'%';persist()}
 function updateClock(){const d=new Date();$('clock').textContent=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',hour12:false})}updateClock();setInterval(updateClock,30000);
 function initAudio(){if(context)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC){toast('このブラウザはWeb Audio APIに対応していません');return}context=new AC();source=context.createMediaElementSource(audio);let previous=source;filters=FREQ.map((f,i)=>{const node=context.createBiquadFilter();node.type=i===0?'lowshelf':i===10?'highshelf':'peaking';node.frequency.value=f;if(i!==0&&i!==10)node.Q.value=1.25;node.gain.value=eqValues[i];previous.connect(node);previous=node;return node});bassFilter=context.createBiquadFilter();bassFilter.type='lowshelf';bassFilter.frequency.value=100;bassFilter.gain.value=isBass?5:0;previous.connect(bassFilter);
@@ -226,15 +319,28 @@ function initAudio(){if(context)return;const AC=window.AudioContext||window.webk
 }
 function createImpulse(ac,duration,decay){const rate=ac.sampleRate,len=Math.floor(rate*duration),buf=ac.createBuffer(2,len,rate);for(let ch=0;ch<2;ch++){let arr=buf.getChannelData(ch);for(let i=0;i<len;i++){const t=i/len;let gate=(i%1129<10?.28:0);arr[i]=((Math.random()*2-1)*.18+gate*(Math.random()*2-1))*Math.pow(1-t,decay)}}return buf}
 function syncEffects(){if(!context)return;bassFilter.gain.setTargetAtTime(isBass?5:0,context.currentTime,.035);reverbGain.gain.setTargetAtTime(isSurround?.25:isSpatial?.11:0,context.currentTime,.035)}
-function updateTrack(){const t=tracks[active];$('songTitle').textContent=t?'♫ '+t.title:'♫ ファイルを選択';$('songTitle').title=t?t.title:'ファイルを追加してください';$('artistName').textContent=t?t.artist:'LOCAL AUDIO';$('trackNumber').textContent=String(t?active+1:0).padStart(2,'0')+'/'+String(tracks.length).padStart(2,'0');$('songCount').textContent='('+tracks.length+')';$('hint').textContent=t?'曲: '+t.title+' | 音声解析連動 | EQ: '+preset:'音楽ファイルを追加すると、再生中の音に合わせてイコライザー表示が動きます。';updateMediaSession();renderList()}
+function updateTrack(){
+  const t=tracks[active];
+  if(inputMode==='mic'){
+    $('songTitle').textContent='♫ 外部音声';$('songTitle').title='ブラウザが利用できるマイクで周囲の音を解析';
+    $('artistName').textContent='MIC INPUT';$('trackNumber').textContent='LIVE';
+    $('hint').textContent='マイクで周囲の音を解析中 | YouTubeの内部音声を直接取得するものではありません';
+  }else{
+    $('songTitle').textContent=t?'♫ '+t.title:'♫ ファイルを選択';$('songTitle').title=t?t.title:'ファイルを追加してください';
+    $('artistName').textContent=t?t.artist:'LOCAL AUDIO';
+    $('trackNumber').textContent=String(t?active+1:0).padStart(2,'0')+'/'+String(tracks.length).padStart(2,'0');
+    $('hint').textContent=t?'曲: '+t.title+' | 音声解析連動 | EQ: '+preset:'音楽ファイルを追加すると、再生中の音に合わせてスペアナ表示が動きます。';
+  }
+  $('songCount').textContent='('+tracks.length+')';updateMediaSession();renderList();
+}
 function updateMediaSession(){if(!('mediaSession' in navigator))return;const t=tracks[active];if(t){try{navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:t.artist,album:'carrozzeria RETRO PLAYER'});}catch(e){}}}
 function addTrack(blob,override){const names=decodeName(blob.name||'音楽');let t={blob,title:override?.title||names.title,artist:override?.artist||names.artist,uri:URL.createObjectURL(blob),saved:!!override?.saved,id:override?.id||null};tracks.push(t);return t}
-function loadTrack(index,autoplay=true){if(index<0||index>=tracks.length)return;active=index;audio.src=tracks[index].uri;audio.load();$('currentTime').textContent='00:00';$('totalTime').textContent='00:00';$('seek').value=0;updateSeek();updateTrack();if(autoplay)play()}
-async function play(){if(!tracks.length){$('fileInput').click();toast('まず音楽ファイルを選択してください');return}try{initAudio();if(!context)return;await context.resume();if(active<0)loadTrack(0,false);await audio.play();}catch(err){toast('再生できません: '+(err?.message||err))}}
+function loadTrack(index,autoplay=true){if(index<0||index>=tracks.length)return;if(inputMode==='mic')stopMic();active=index;audio.src=tracks[index].uri;audio.load();$('currentTime').textContent='00:00';$('totalTime').textContent='00:00';$('seek').value=0;updateSeek();updateTrack();if(autoplay)play()}
+async function play(){if(inputMode==='mic')stopMic();if(!tracks.length){$('fileInput').click();toast('まず音楽ファイルを選択してください');return}try{initAudio();if(!context)return;await context.resume();if(active<0)loadTrack(0,false);await audio.play();}catch(err){toast('再生できません: '+(err?.message||err))}}
 function pause(){audio.pause()}
 function playPause(){audio.paused?play():pause()}
 function next(direction=1){if(!tracks.length)return;let n=active;if(isShuffle&&tracks.length>1){do{n=Math.floor(Math.random()*tracks.length)}while(n===active)}else{n=active+direction;if(n<0)n=tracks.length-1;if(n>=tracks.length)n=0}loadTrack(n,true)}
-function syncTransport(){const playing=!audio.paused&&!audio.ended;$('playSymbol').textContent=playing?'Ⅱ':'▶';$('led').classList.toggle('live',playing);setStatus(playing?'PLAYING / REAL-TIME FFT':'READY / LOCAL MUSIC');if('mediaSession' in navigator)try{navigator.mediaSession.playbackState=playing?'playing':'paused'}catch(e){} }
+function syncTransport(){const micOn=inputMode==='mic',playing=!audio.paused&&!audio.ended;$('playSymbol').textContent=micOn?'◉':playing?'Ⅱ':'▶';$('led').classList.toggle('live',micOn||playing);setStatus(micOn?'MIC LIVE / FFT':playing?'PLAYING / REAL-TIME FFT':'READY / LOCAL MUSIC');if('mediaSession' in navigator)try{navigator.mediaSession.playbackState=playing?'playing':'paused'}catch(e){} }
 function updateSeek(){let r=(audio.duration&&Number.isFinite(audio.duration))?Math.max(0,Math.min(1,audio.currentTime/audio.duration)):0;$('seekWrap').style.background=`linear-gradient(90deg,#52ffad 0%,#52ffad ${r*100}%,#0c261b ${r*100}%,#0c261b 100%)`}
 function updateTime(){$('currentTime').textContent=timetext(audio.currentTime);$('totalTime').textContent=timetext(audio.duration);$('seek').value=Number.isFinite(audio.duration)&&audio.duration>0?Math.round(audio.currentTime/audio.duration*1000):0;updateSeek()}
 audio.addEventListener('play',syncTransport);audio.addEventListener('pause',syncTransport);audio.addEventListener('durationchange',updateTime);audio.addEventListener('timeupdate',updateTime);audio.addEventListener('error',()=>{if(audio.src)toast('この形式は再生できません。MP3やM4Aなどをお試しください')});audio.addEventListener('ended',()=>{if(repeatMode===2){audio.currentTime=0;play()}else if(active<tracks.length-1||isShuffle||repeatMode===1)next(1);else syncTransport()});
@@ -258,7 +364,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.co
 function fullscreen(){const el=document.documentElement;try{if(!document.fullscreenElement){const f=el.requestFullscreen||el.webkitRequestFullscreen;const result=f?.call(el);result?.catch?.(()=>toast('この端末では全画面表示が許可されません'))}else document.exitFullscreen?.()}catch(e){toast('この端末では全画面表示が許可されません')}}
 function openSheet(tab){$('dimmer').classList.add('show');document.body.style.overflow='hidden';showTab(tab);$('closeSheet').focus({preventScroll:true})}
 function closeSheet(){$('dimmer').classList.remove('show');document.body.style.overflow=''}
-function showTab(tab){sheetTab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));for(const t of ['playlist','eq','help'])$('panel-'+t).classList.toggle('active',t===tab);$('sheetTitle').textContent={playlist:'MUSIC LIBRARY',eq:'11 BAND GRAPHIC EQUALIZER',help:'HOW TO USE'}[tab];if(tab==='playlist')renderList();if(tab==='eq'){renderEQ();syncToggles()}}
+function showTab(tab){sheetTab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));for(const t of ['playlist','eq','mic','help'])$('panel-'+t).classList.toggle('active',t===tab);$('sheetTitle').textContent={playlist:'MUSIC LIBRARY',eq:'11 BAND GRAPHIC EQUALIZER',mic:'EXTERNAL SOUND / MIC FFT',help:'HOW TO USE'}[tab];if(tab==='playlist')renderList();if(tab==='eq'){renderEQ();syncToggles()}}
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 function syncToggles(){document.querySelectorAll('[data-eqmode]').forEach(el=>el.classList.toggle('on',el.dataset.eqmode===preset));$('dsp3d').classList.toggle('on',isSpatial);$('dspSurround').classList.toggle('on',isSurround);$('dspBass').classList.toggle('on',isBass);$('bassToggle').checked=isBass;$('spatialToggle').checked=isSpatial;$('surroundToggle').checked=isSurround;$('repeatHot').classList.toggle('selected',repeatMode!==0);$('shuffleHot').classList.toggle('selected',isShuffle);$('bassHot').classList.toggle('selected',isBass);$('spatialHot').classList.toggle('selected',isSpatial);$('surroundHot').classList.toggle('selected',isSurround)}
 for(const [id,act] of [['bassToggle','bass'],['spatialToggle','spatial'],['surroundToggle','surround']])$(id).addEventListener('change',()=>dispatch(act));
@@ -279,18 +385,22 @@ if(canStore)loadStored(true);
 // 音響信号を実際にFFT解析し、音の強弱に合わせて縦方向のセグメントを更新する。
 function resizeCanvas(){const r=canvas.getBoundingClientRect();if(r.width<=0)return;const dpr=Math.min(window.devicePixelRatio||1,2.5);let w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}ctx.setTransform(dpr,0,0,dpr,0,0)}
 function spectrumValues(){
-  if(!context||!analyser||audio.paused||audio.ended)return SPECTRUM_FREQ.map(()=>0);
-  analyser.getByteFrequencyData(frequencies);
-  const nyquist=context.sampleRate/2,hzPerBin=nyquist/frequencies.length;
+  const micOn=inputMode==='mic';
+  const a=micOn?micAnalyser:analyser;
+  const fdata=micOn?micFrequencies:frequencies;
+  const ac=micOn?micContext:context;
+  if(!ac||!a||!fdata||(!micOn&&(audio.paused||audio.ended)))return SPECTRUM_FREQ.map(()=>0);
+  a.getByteFrequencyData(fdata);
+  const nyquist=ac.sampleRate/2,hzPerBin=nyquist/fdata.length;
   return SPECTRUM_FREQ.map((freq,i)=>{
     const lo=i===0?22:Math.sqrt(SPECTRUM_FREQ[i-1]*freq);
     const hi=i===SPECTRUM_FREQ.length-1?Math.min(20000,nyquist):Math.sqrt(freq*SPECTRUM_FREQ[i+1]);
-    let a=Math.max(1,Math.floor(lo/hzPerBin)),b=Math.min(frequencies.length-1,Math.ceil(hi/hzPerBin));
+    let a=Math.max(1,Math.floor(lo/hzPerBin)),b=Math.min(fdata.length-1,Math.ceil(hi/hzPerBin));
     if(b<a)b=a;
     let max=0,total=0,n=0;
-    for(let j=a;j<=b;j++){const v=frequencies[j];max=Math.max(max,v);total+=v;n++}
+    for(let j=a;j<=b;j++){const v=fdata[j];max=Math.max(max,v);total+=v;n++}
     const level=(max*.58+(total/Math.max(1,n))*.42)/255;
-    return Math.max(0,Math.min(1,(level-.055)*1.26));
+    return Math.max(0,Math.min(1,(level-.055)*(micOn?micSensitivity:1.26))); 
   });
 }
 function drawSpectrum(now){raf=requestAnimationFrame(drawSpectrum);const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;if(canvas.width===0||Math.abs(canvas.width-r.width*(Math.min(window.devicePixelRatio||1,2.5)))>3)resizeCanvas();let w=r.width,h=r.height;if(!w||!h)return;const d=Math.min((now-lastFrame||16)/1000,.1);lastFrame=now;
@@ -308,6 +418,7 @@ function createDemo(){const rate=22050,seconds=12,n=rate*seconds,pcm=new Int16Ar
 $('demoButton').addEventListener('click',()=>{if(!tracks.some(t=>t.title==='Original Synth')){const f=createDemo();addTrack(f)}loadTrack(tracks.findIndex(t=>t.title==='Original Synth'),true);toast('オリジナルのデモ音源を再生します')});
 setVolume(vol);updateTrack();syncToggles();syncTransport();
 if('mediaSession' in navigator){for(const [action,fn] of [['play',play],['pause',pause],['previoustrack',()=>next(-1)],['nexttrack',()=>next(1)]]){try{navigator.mediaSession.setActionHandler(action,fn)}catch(e){}}}
+updateModeUI();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 })()
 </script>
