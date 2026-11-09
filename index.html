@@ -8,9 +8,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<title>carrozzeria | U2-PLUS 表示修正版 v4</title>
+
+
+<title>carrozzeria | Google Drive Music Player</title>
 <style>
 :root{color-scheme:dark;--green:#96ffd0;--mint:#00faae;--amber:#f8c969;--line:#5d8275;--panel:#091510;--gray:#a9c1b7}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -126,6 +126,22 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .mic-lamp.active{border-color:#f4c46d;color:#ffe2a1;background:#38270e}
 .mic-small{margin-top:14px;font-size:12px;color:#aec7b5;line-height:1.7}
 @media(max-width:600px){.header .mode-live{font-size:9px}}
+
+/* Google Drive browser */
+.drive-panel{padding:3px 0 12px;color:#bde6cb}
+.drive-panel input{background:#071810;border:1px solid #4d8465;border-radius:9px;color:#eaffed;padding:11px;min-height:44px;width:100%;font-size:14px}
+.drive-panel label{display:block;color:#9fddbd;margin:10px 0 6px;font-size:13px;font-weight:bold}
+.drive-flex{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}
+.drive-flex .action{flex:0 0 auto}
+.drive-feedback{min-height:24px;padding:7px 10px;border:1px solid #254a36;background:#05160b;border-radius:7px;color:#aaf0c4;font-size:12px;word-break:break-word;line-height:1.6}
+.drive-crumbs{font-size:13px;color:#87ffc1;margin:12px 0;overflow-wrap:anywhere}
+.drive-row{display:flex;gap:9px;align-items:center;padding:9px 8px;margin:5px 0;border:1px solid #254b35;border-radius:9px;background:#0a2115}
+.drive-title{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}
+.drive-meta{color:#94b6a2;font-size:11px}
+.drive-row .action{padding:7px 10px;min-height:38px}
+.drive-login-help{font-size:12px;line-height:1.7;color:#a6cfb5;margin-top:12px}
+.drive-steps{margin:10px 0 8px;padding-left:24px;line-height:1.9;color:#b3dfc3;font-size:12px}
+.drive-preferred{border:1px solid #3b8455;padding:13px;margin:14px 0;border-radius:12px;background:#0b1c13}.drive-preferred strong{color:#91ffc3}.drive-auto-label{display:flex!important;gap:9px;align-items:center;font-size:13px!important}.drive-auto-label input{width:18px;height:18px;min-height:0;accent-color:#58fca5}.drive-alert{color:#ffd99b;border-left:3px solid #e6a752;padding-left:10px;margin:12px 0;line-height:1.7;font-size:12px}
 </style>
 </head>
 <body>
@@ -184,11 +200,12 @@ button:disabled{opacity:.35;cursor:not-allowed}
     <button id="importButton" class="tool primary"><span class="sym">♫</span> 音楽を追加</button>
     <button id="demoButton" class="tool"><span class="sym">▶</span> 動作デモ</button>
     <button id="micButton" class="tool mic-tool" aria-pressed="false"><span class="sym">◉</span> マイク解析を開始</button>
+    <button id="driveButton" class="tool"><span class="sym">☁</span> Google Drive</button>
     <button id="playlistButton" class="tool"><span class="sym">☷</span> 曲一覧 <span id="songCount">(0)</span></button>
     <button id="eqButton" class="tool"><span class="sym">▥</span> 11 BAND EQ</button>
     <button id="fullscreenButton" class="tool"><span class="sym">⛶</span> 全画面</button>
   </div>
-  <div class="hint" id="hint">音楽ファイルを追加すると、再生中の音に合わせてイコライザー表示が動きます。音楽ファイルは端末内から選択できます。</div>
+  <div class="hint" id="hint">音楽ファイルを追加すると、再生中の音に合わせてイコライザー表示が動きます。端末内の曲とGoogle Driveの曲を選択できます。</div>
 </div>
 <input class="visually-hidden" type="file" id="fileInput" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple>
 <audio id="audio" preload="metadata" playsinline></audio>
@@ -196,7 +213,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="sheet-head"><span id="sheetTitle" class="sheet-title">PLAYER MENU</span><button id="closeSheet" class="close" aria-label="閉じる">✕ 閉じる</button></div>
     <div class="sheet-body">
-      <nav class="tabs" aria-label="メニュー"><button class="tab active" data-tab="playlist">曲一覧 / 保存</button><button class="tab" data-tab="eq">11 BAND EQ / 音質</button><button class="tab" data-tab="mic">外部音声（マイク）</button><button class="tab" data-tab="help">使い方</button></nav>
+      <nav class="tabs" aria-label="メニュー"><button class="tab active" data-tab="playlist">曲一覧 / 保存</button><button class="tab" data-tab="eq">11 BAND EQ / 音質</button><button class="tab" data-tab="mic">外部音声（マイク）</button><button class="tab" data-tab="drive">Google Drive</button><button class="tab" data-tab="help">使い方</button></nav>
       <section id="panel-playlist" class="section active">
         <div class="actions"><button class="action" id="addSongs">＋ 音楽を追加</button><button class="action" id="saveAll">⬇ 曲を端末に保存</button><button class="action" id="loadStored">↻ 保存曲を読み込む</button><button class="action danger" id="clearSongs">一覧をクリア</button></div>
         <div class="notice">通常追加した曲はこの画面を閉じても再生できますが、ブラウザを終了すると再選択が必要です。「端末に保存」を押すとブラウザの保存領域に音楽データを保存し、次回起動時にも読み込めます。容量制限があります。</div>
@@ -208,6 +225,43 @@ button:disabled{opacity:.35;cursor:not-allowed}
         <div class="eq-bars" id="eqSliders"></div>
         <div class="toggles"><label><input type="checkbox" id="bassToggle"> BASS XT（低音強調）</label><label><input type="checkbox" id="spatialToggle"> 3D（軽い空間効果）</label><label><input type="checkbox" id="surroundToggle"> SURROUND（残響を追加）</label></div>
         <div class="range-row"><label for="volumeRange">音量</label><input id="volumeRange" type="range" min="0" max="100" value="50"><span id="volumePercent">50%</span></div>
+      </section>
+      <section id="panel-drive" class="section">
+        <div class="drive-panel">
+          <div class="notice">Googleドライブの音楽フォルダーを<strong>一度登録</strong>すると、ログイン後にそのフォルダーの曲を自動で読み込みます。新しくアップロードした曲は「最新の曲を取得」で追加できます。曲の音声は再生時に取得します。24本スペアナと11バンドEQはそのまま利用できます。</div>
+          <label for="driveClientId">Google OAuth 2.0 クライアントID（ウェブアプリケーション）</label>
+          <input id="driveClientId" type="text" autocomplete="off" spellcheck="false" placeholder="123456789-xxxx.apps.googleusercontent.com" aria-label="Google OAuthクライアントID">
+          <div class="drive-flex"><button class="action primary" id="driveConnect">Googleにログイン</button><button class="action" id="driveLogout">接続解除</button></div>
+          <div class="drive-feedback" id="driveStatus" role="status">未接続。クライアントIDを設定してログインしてください。</div>
+          <div class="drive-preferred">
+            <strong>★ 音楽フォルダー（登録済み）</strong>
+            <div id="drivePreferredName" class="drive-feedback">まだ登録されていません</div>
+            <div class="drive-flex">
+              <button class="action primary" id="driveSetPreferred">このフォルダーを音楽フォルダーに登録</button>
+              <button class="action primary" id="driveRefreshPreferred">↻ 最新の曲を取得</button>
+              <button class="action" id="driveForgetPreferred">登録解除</button>
+            </div>
+            <label class="drive-auto-label"><input type="checkbox" id="driveAutoImport" checked> Googleログイン後に音楽フォルダーを自動読込</label>
+            <div class="drive-feedback" id="driveSyncStatus" role="status">音楽フォルダーを登録すると、次回から探し直す必要はありません。</div>
+          </div>
+          <label for="driveFolderInput">フォルダーのURLまたはフォルダーID（任意）</label>
+          <input id="driveFolderInput" type="text" autocomplete="off" placeholder="https://drive.google.com/drive/folders/...">
+          <div class="drive-flex"><button class="action" id="driveOpenFolder">このフォルダーを開く</button><button class="action" id="driveRoot">マイドライブから探す</button><button class="action" id="driveBack">一つ上へ</button></div>
+          <div class="drive-crumbs" id="driveBreadcrumb">フォルダーを選択してください</div>
+          <div class="drive-flex"><button class="action" id="driveAddAll">表示中の音楽を曲一覧に追加</button></div>
+          <div id="driveFolderList" class="songlist"></div>
+          <div class="drive-alert">このアプリではログイン認証を自動で省略できないため、端末再起動後などは「Googleにログイン」を押す必要があります。フォルダーの登録設定は端末に保持しますが、Googleのアクセストークンやパスワードは保存しません。インターネット接続が必要です。</div>
+          <details><summary>初期設定の手順</summary>
+            <ol class="drive-steps">
+              <li>Google Cloudでプロジェクトを作成し「Google Drive API」を有効化します。</li>
+              <li>Google Auth Platformの同意画面を設定します。テスト公開の場合は自分のGoogleアカウントをテストユーザーに登録します。</li>
+              <li>OAuthクライアントを「ウェブアプリケーション」で作成します。</li>
+              <li>「承認済みのJavaScript生成元」に<strong>GitHub Pagesの生成元</strong>（例：<code>https://YOURNAME.github.io</code>）を登録します。パスは含めません。</li>
+              <li>クライアントIDを上の欄へ貼り付け、Googleにログインします。権限はDrive内のファイル読み取り専用です。</li>
+              <li>マイドライブから音楽フォルダーを開き「このフォルダーを音楽フォルダーに登録」を押します。次回からログイン後に自動で曲を読み込み、「最新の曲を取得」で新しく追加された曲を更新できます。</li>
+            </ol>
+          </details>
+        </div>
       </section>
       <section id="panel-mic" class="section">
         <div class="mic-guide"><strong>YouTubeアプリの音声データを直接取得する機能ではありません。</strong>
@@ -363,8 +417,24 @@ function updateTrack(){
 }
 function updateMediaSession(){if(!('mediaSession' in navigator))return;const t=tracks[active];if(t){try{navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:t.artist,album:'carrozzeria RETRO PLAYER'});}catch(e){}}}
 function addTrack(blob,override){const names=decodeName(blob.name||'音楽');let t={blob,title:override?.title||names.title,artist:override?.artist||names.artist,uri:URL.createObjectURL(blob),saved:!!override?.saved,id:override?.id||null};tracks.push(t);return t}
-function loadTrack(index,autoplay=true){if(index<0||index>=tracks.length)return;if(inputMode==='mic')stopMic();active=index;audio.src=tracks[index].uri;audio.load();$('currentTime').textContent='00:00';$('totalTime').textContent='00:00';$('seek').value=0;updateSeek();updateTrack();if(autoplay)play()}
-async function play(){if(inputMode==='mic')stopMic();if(!tracks.length){$('fileInput').click();toast('まず音楽ファイルを選択してください');return}try{initAudio();if(!context)return;await context.resume();if(active<0)loadTrack(0,false);await audio.play();}catch(err){toast('再生できません: '+(err?.message||err))}}
+let trackLoadSerial=0;
+async function loadTrack(index,autoplay=true){
+ if(index<0||index>=tracks.length)return;
+ const serial=++trackLoadSerial;
+ if(inputMode==='mic')stopMic();
+ audio.pause();active=index;
+ audio.removeAttribute('src');audio.load();
+ $('currentTime').textContent='00:00';$('totalTime').textContent='00:00';$('seek').value=0;updateSeek();updateTrack();
+ const t=tracks[index];
+ try{
+  let uri=t.uri;
+  if(!uri&&t.driveId){setStatus('GOOGLE DRIVE / LOADING');uri=await driveGetTrackUri(t)}
+  if(serial!==trackLoadSerial)return;
+  if(!uri)throw new Error('再生できる音声データがありません');
+  audio.src=uri;audio.load();if(autoplay)await play();
+ }catch(e){if(serial===trackLoadSerial){toast('再生準備エラー: '+(e.message||e));driveStatus('曲を再生できません: '+(e.message||e))}}
+}
+async function play(){if(inputMode==='mic')stopMic();if(!tracks.length){$('fileInput').click();toast('まず音楽ファイルを選択してください');return}try{initAudio();if(!context)return;await context.resume();if(active<0){await loadTrack(0,true);return}if(!audio.src){await loadTrack(active,true);return}await audio.play();}catch(err){toast('再生できません: '+(err?.message||err))}}
 function pause(){audio.pause()}
 function playPause(){audio.paused?play():pause()}
 function next(direction=1){if(!tracks.length)return;let n=active;if(isShuffle&&tracks.length>1){do{n=Math.floor(Math.random()*tracks.length)}while(n===active)}else{n=active+direction;if(n<0)n=tracks.length-1;if(n>=tracks.length)n=0}loadTrack(n,true)}
@@ -375,8 +445,8 @@ audio.addEventListener('play',syncTransport);audio.addEventListener('pause',sync
 $('seek').addEventListener('input',ev=>{if(Number.isFinite(audio.duration)&&audio.duration>0){audio.currentTime=Number(ev.target.value)/1000*audio.duration;updateTime()}});
 function formatFileSize(n){return n>=1048576?(n/1048576).toFixed(1)+'MB':(n/1024).toFixed(0)+'KB'}
 function renderList(){const e=$('playlistContent');e.replaceChildren();if(!tracks.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='まだ曲がありません。「音楽を追加」から端末の曲を選択してください。';e.append(empty);return}
-  tracks.forEach((t,i)=>{const row=document.createElement('div');row.className='songrow'+(i===active?' current':'');const num=document.createElement('span');num.className='number';num.textContent=String(i+1).padStart(2,'0');const main=document.createElement('button');main.className='name';main.textContent=t.title+' · '+t.artist;main.title=t.title;main.addEventListener('click',()=>{loadTrack(i,true);closeSheet()});const meta=document.createElement('span');meta.className='meta';meta.textContent=(t.saved?'保存済 · ':'')+formatFileSize(t.blob.size);const del=document.createElement('button');del.className='remove';del.textContent='削除';del.title='曲一覧から削除';del.addEventListener('click',()=>removeTrack(i));row.append(num,main,meta,del);e.append(row)})}
-async function removeTrack(i){const t=tracks[i];if(!t)return;if(t.saved&&t.id!==null)await deleteFromDB(t.id).catch(()=>{});const wasActive=active===i;tracks.splice(i,1);URL.revokeObjectURL(t.uri);if(wasActive){audio.pause();audio.removeAttribute('src');audio.load();active=-1;if(tracks.length)loadTrack(Math.min(i,tracks.length-1),false)}else if(active>i)active--;updateTrack()}
+  tracks.forEach((t,i)=>{const row=document.createElement('div');row.className='songrow'+(i===active?' current':'');const num=document.createElement('span');num.className='number';num.textContent=String(i+1).padStart(2,'0');const main=document.createElement('button');main.className='name';main.textContent=t.title+' · '+t.artist;main.title=t.title;main.addEventListener('click',()=>{loadTrack(i,true);closeSheet()});const meta=document.createElement('span');meta.className='meta';meta.textContent=(t.saved?'保存済 · ':'')+(t.driveId?'☁ Drive · ':'')+formatFileSize(t.blob?t.blob.size:t.driveSize||0);const del=document.createElement('button');del.className='remove';del.textContent='削除';del.title='曲一覧から削除';del.addEventListener('click',()=>removeTrack(i));row.append(num,main,meta,del);e.append(row)})}
+async function removeTrack(i){const t=tracks[i];if(!t)return;if(t.saved&&t.id!==null)await deleteFromDB(t.id).catch(()=>{});const wasActive=active===i;if(wasActive)trackLoadSerial++;tracks.splice(i,1);if(t.uri)URL.revokeObjectURL(t.uri);if(wasActive){audio.pause();audio.removeAttribute('src');audio.load();active=-1;if(tracks.length)loadTrack(Math.min(i,tracks.length-1),false)}else if(active>i)active--;updateTrack()}
 async function importFiles(list){const files=Array.from(list||[]).filter(f=>f instanceof Blob&&f.size>0);if(!files.length)return;const start=tracks.length;for(const f of files)addTrack(f);updateTrack();closeSheet();toast(files.length+' 曲追加しました');if(active<0)loadTrack(start,true)}
 $('fileInput').addEventListener('change',async e=>{await importFiles(e.target.files);e.target.value=''});
 function dispatch(a){if(a.startsWith('preset:')){usePreset(a.split(':')[1]);return}switch(a){case 'power':case 'play':playPause();break;case 'pause':pause();break;case 'prev':next(-1);break;case 'next':next(1);break;case 'volumeUp':setVolume(vol+5);break;case 'volumeDown':setVolume(vol-5);break;case 'import':$('fileInput').click();break;case 'playlist':openSheet('playlist');break;case 'eq':openSheet('eq');break;case 'help':openSheet('help');break;case 'fullscreen':fullscreen();break;case 'shuffle':isShuffle=!isShuffle;persist();syncToggles();toast('シャッフル '+(isShuffle?'ON':'OFF'));break;case 'repeat':repeatMode=(repeatMode+1)%3;persist();syncToggles();toast(['リピート OFF','全曲リピート','1曲リピート'][repeatMode]);break;case 'bass':isBass=!isBass;syncEffects();persist();syncToggles();toast('BASS XT '+(isBass?'ON':'OFF'));break;case 'spatial':isSpatial=!isSpatial;if(isSpatial)isSurround=false;syncEffects();persist();syncToggles();toast('3D '+(isSpatial?'ON':'OFF'));break;case 'surround':isSurround=!isSurround;if(isSurround)isSpatial=false;syncEffects();persist();syncToggles();toast('SURROUND '+(isSurround?'ON':'OFF'));break;}}
@@ -392,7 +462,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.co
 function fullscreen(){const el=document.documentElement;try{if(!document.fullscreenElement){const f=el.requestFullscreen||el.webkitRequestFullscreen;const result=f?.call(el);result?.catch?.(()=>toast('この端末では全画面表示が許可されません'))}else document.exitFullscreen?.()}catch(e){toast('この端末では全画面表示が許可されません')}}
 function openSheet(tab){$('dimmer').classList.add('show');document.body.style.overflow='hidden';showTab(tab);$('closeSheet').focus({preventScroll:true})}
 function closeSheet(){$('dimmer').classList.remove('show');document.body.style.overflow=''}
-function showTab(tab){sheetTab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));for(const t of ['playlist','eq','mic','help'])$('panel-'+t).classList.toggle('active',t===tab);$('sheetTitle').textContent={playlist:'MUSIC LIBRARY',eq:'11 BAND GRAPHIC EQUALIZER',mic:'EXTERNAL SOUND / MIC FFT',help:'HOW TO USE'}[tab];if(tab==='playlist')renderList();if(tab==='eq'){renderEQ();syncToggles()}}
+function showTab(tab){sheetTab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));for(const t of ['playlist','eq','mic','drive','help'])$('panel-'+t).classList.toggle('active',t===tab);$('sheetTitle').textContent={playlist:'MUSIC LIBRARY',eq:'11 BAND GRAPHIC EQUALIZER',mic:'EXTERNAL SOUND / MIC FFT',drive:'GOOGLE DRIVE MUSIC LIBRARY',help:'HOW TO USE'}[tab];if(tab==='playlist')renderList();if(tab==='eq'){renderEQ();syncToggles()}}
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 function syncToggles(){document.querySelectorAll('[data-eqmode]').forEach(el=>el.classList.toggle('on',el.dataset.eqmode===preset));$('dsp3d').classList.toggle('on',isSpatial);$('dspSurround').classList.toggle('on',isSurround);$('dspBass').classList.toggle('on',isBass);$('bassToggle').checked=isBass;$('spatialToggle').checked=isSpatial;$('surroundToggle').checked=isSurround;$('repeatHot').classList.toggle('selected',repeatMode!==0);$('shuffleHot').classList.toggle('selected',isShuffle);$('bassHot').classList.toggle('selected',isBass);$('spatialHot').classList.toggle('selected',isSpatial);$('surroundHot').classList.toggle('selected',isSurround)}
 for(const [id,act] of [['bassToggle','bass'],['spatialToggle','spatial'],['surroundToggle','surround']])$(id).addEventListener('change',()=>dispatch(act));
@@ -406,9 +476,9 @@ async function getStored(){let db=await getDB();return new Promise((resolve,reje
 async function saveOne(t){const db=await getDB();return new Promise((resolve,reject)=>{const tx=db.transaction('tracks','readwrite');const rec={blob:t.blob,name:t.blob.name||t.title,title:t.title,artist:t.artist};if(t.id!=null)rec.id=t.id;const req=tx.objectStore('tracks').put(rec);req.onsuccess=()=>{t.id=req.result;t.saved=true};tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
 async function deleteFromDB(id){const db=await getDB();return new Promise((resolve,reject)=>{const tx=db.transaction('tracks','readwrite');tx.objectStore('tracks').delete(id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)})}
 async function loadStored(silent=false){try{const recs=await getStored();let count=0;for(const r of recs){if(tracks.some(t=>t.id===r.id&&t.saved))continue;let blob=r.blob;if(blob&&blob.size){addTrack(blob,{title:r.title,artist:r.artist,id:r.id,saved:true});count++}}updateTrack();if(!silent)toast(count?count+' 曲読み込みました':'新しい保存曲はありません')}catch(e){if(!silent)toast('保存曲を読み込めません: '+e.message)}}
-$('saveAll').addEventListener('click',async()=>{if(!tracks.length){toast('保存する曲がありません');return}const b=$('saveAll');b.disabled=true;b.textContent='保存中...';let n=0;try{for(const t of tracks){if(!t.saved){await saveOne(t);n++}}toast(n+' 曲を端末内に保存しました')}catch(e){toast('容量不足か保存エラーです: '+e.message)}finally{b.disabled=false;b.textContent='⬇ 曲を端末に保存';renderList()}});
+$('saveAll').addEventListener('click',async()=>{if(!tracks.length){toast('保存する曲がありません');return}const b=$('saveAll');b.disabled=true;b.textContent='保存中...';let n=0;try{for(const t of tracks){if(!t.saved&&t.blob){await saveOne(t);n++}}toast(n+' 曲を端末内に保存しました')}catch(e){toast('容量不足か保存エラーです: '+e.message)}finally{b.disabled=false;b.textContent='⬇ 曲を端末に保存';renderList()}});
 $('loadStored').addEventListener('click',()=>loadStored());
-$('clearSongs').addEventListener('click',async()=>{if(!tracks.length)return;if(!confirm('曲一覧をクリアしますか？保存済みの曲データは端末内に残ります。'))return;audio.pause();audio.removeAttribute('src');audio.load();tracks.forEach(t=>URL.revokeObjectURL(t.uri));tracks=[];active=-1;updateTrack()});
+$('clearSongs').addEventListener('click',async()=>{if(!tracks.length)return;if(!confirm('曲一覧をクリアしますか？保存済みの曲データは端末内に残ります。'))return;trackLoadSerial++;audio.pause();audio.removeAttribute('src');audio.load();tracks.forEach(t=>{if(t.uri)URL.revokeObjectURL(t.uri)});tracks=[];active=-1;updateTrack()});
 if(canStore)loadStored(true);
 // 音響信号を実際にFFT解析し、音の強弱に合わせて縦方向のセグメントを更新する。
 function resizeCanvas(){const r=canvas.getBoundingClientRect();if(r.width<=0)return;const dpr=Math.min(window.devicePixelRatio||1,2.5);let w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}ctx.setTransform(dpr,0,0,dpr,0,0)}
@@ -446,6 +516,133 @@ function createDemo(){const rate=22050,seconds=12,n=rate*seconds,pcm=new Int16Ar
 $('demoButton').addEventListener('click',()=>{if(!tracks.some(t=>t.title==='Original Synth')){const f=createDemo();addTrack(f)}loadTrack(tracks.findIndex(t=>t.title==='Original Synth'),true);toast('オリジナルのデモ音源を再生します')});
 setVolume(vol);updateTrack();syncToggles();syncTransport();
 if('mediaSession' in navigator){for(const [action,fn] of [['play',play],['pause',pause],['previoustrack',()=>next(-1)],['nexttrack',()=>next(1)]]){try{navigator.mediaSession.setActionHandler(action,fn)}catch(e){}}}
+
+// -------- Google Drive 読み取り専用接続（GIS OAuth 2.0 Token Client） --------
+// OAuthクライアントIDだけを端末に記憶。アクセストークンやパスワードは保存しない。
+const driveState={accessToken:'',tokenClient:null,tokenClientId:'',folderId:'root',folderName:'マイドライブ',history:[],items:[],loading:false,syncing:false};
+const DRIVE_PREF_KEY='carrozzeria_drive_music_folder_v1';
+const DRIVE_AUTO_KEY='carrozzeria_drive_auto_import_v1';
+let drivePreferred=null;
+let driveAutoImport=true;
+try{const p=JSON.parse(localStorage.getItem(DRIVE_PREF_KEY)||'null');if(p&&typeof p.id==='string'&&/^[A-Za-z0-9_-]{10,}$/.test(p.id))drivePreferred={id:p.id,name:typeof p.name==='string'?p.name:'登録済みフォルダー'};driveAutoImport=localStorage.getItem(DRIVE_AUTO_KEY)!=='false'}catch(e){}
+function updatePreferredUI(){
+ $('drivePreferredName').textContent=drivePreferred?'☁ '+drivePreferred.name+' （登録済み）':'まだ登録されていません';
+ $('driveAutoImport').checked=driveAutoImport;
+ $('driveRefreshPreferred').disabled=!drivePreferred;
+ $('driveForgetPreferred').disabled=!drivePreferred;
+}
+function driveSyncStatus(message){$('driveSyncStatus').textContent=message;}
+function driveSavePreference(){try{if(drivePreferred)localStorage.setItem(DRIVE_PREF_KEY,JSON.stringify(drivePreferred));else localStorage.removeItem(DRIVE_PREF_KEY)}catch(e){driveSyncStatus('保存できません。このブラウザのプライベートモードや保存設定をご確認ください')}}
+async function driveSyncPreferred(){
+ if(!drivePreferred){driveSyncStatus('まず音楽フォルダーを登録してください。');return}
+ if(!driveState.accessToken){driveSyncStatus('Googleにログインすると登録フォルダーから曲を取得できます。');return}
+ if(driveState.syncing){driveSyncStatus('曲一覧を更新中です。');return}
+ driveState.syncing=true;
+ $('driveRefreshPreferred').disabled=true;
+ driveSyncStatus('☁ '+drivePreferred.name+' の新しい曲を調べています…');
+ try{
+  const files=(await driveList(drivePreferred.id)).filter(driveAudioFile);
+  let added=0;
+  // ファイルIDで重複排除。既存の曲やローカル保存データは削除しない。
+  for(const f of files){if(tracks.some(t=>t.driveId===f.id))continue;driveAddTrack(f,true);added++}
+  const message='☁ '+drivePreferred.name+'：'+files.length+'曲を確認・新規'+added+'曲を追加しました';
+  driveSyncStatus(message);driveStatus(message);toast(message);
+  updateTrack();
+ }catch(e){driveSyncStatus('更新できません: '+driveError(e));driveStatus('音楽フォルダー更新に失敗しました: '+driveError(e))}
+ finally{driveState.syncing=false;updatePreferredUI()}
+}
+const DRIVE_AUDIO=/\.(mp3|m4a|aac|wav|flac|ogg|oga|opus|webm)$/i;
+function driveStatus(message){$('driveStatus').textContent=message;}
+function driveAudioFile(f){return !!f && (f.mimeType||'').indexOf('audio/')===0 || (!!f && DRIVE_AUDIO.test(f.name||''));}
+function driveIdFromInput(value){const v=(value||'').trim();if(v==='root')return 'root';const m=v.match(/\/folders\/([A-Za-z0-9_-]+)/);if(m)return m[1];if(/^[A-Za-z0-9_-]{10,}$/.test(v))return v;return '';}
+function driveError(e){return (e&&e.message)||String(e);}
+function driveLoadGIS(){return new Promise((resolve,reject)=>{if(window.google&&google.accounts&&google.accounts.oauth2){resolve();return}const existing=document.getElementById('google-identity-script');if(existing){existing.addEventListener('load',()=>resolve(),{once:true});existing.addEventListener('error',()=>reject(new Error('Googleログインライブラリの読み込みに失敗しました')),{once:true});return}const s=document.createElement('script');s.id='google-identity-script';s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>resolve();s.onerror=()=>reject(new Error('Googleログインの読み込みに失敗しました。インターネット接続をご確認ください。'));document.head.appendChild(s)})}
+async function driveConnect(){
+ const clientId=$('driveClientId').value.trim();
+ if(!/^[0-9]+-[a-z0-9-]+\.apps\.googleusercontent\.com$/.test(clientId)){driveStatus('正しいOAuth 2.0 ウェブクライアントIDを入力してください。');return}
+ if(!/^https:$/.test(location.protocol)){driveStatus('GoogleログインにはHTTPS公開URLが必要です。GitHub Pagesから開いてください。');return}
+ try{
+  localStorage.setItem('carrozzeria_drive_client_id',clientId);
+  driveStatus('Googleのログイン画面を開いています…');
+  await driveLoadGIS();
+  if(!driveState.tokenClient || driveState.tokenClientId!==clientId){
+   driveState.tokenClientId=clientId;
+   driveState.tokenClient=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:'https://www.googleapis.com/auth/drive.readonly',callback:(resp)=>{
+    if(resp.error){driveStatus('Googleログイン失敗: '+(resp.error_description||resp.error));return}
+    driveState.accessToken=resp.access_token||'';
+    driveStatus('Googleドライブに接続しました（読み取り専用）。');
+    if(drivePreferred&&driveAutoImport){
+     driveBrowse(drivePreferred.id,drivePreferred.name,true).then(()=>driveSyncPreferred()).catch(e=>driveStatus('登録フォルダーを開けません: '+driveError(e)));
+    }else{
+     driveBrowse('root','マイドライブ',true).catch(e=>driveStatus('一覧を取得できません: '+driveError(e)));
+    }
+   },error_callback:(err)=>driveStatus('ログイン画面を開けませんでした: '+(err.type||'端末のブラウザ設定を確認してください'))});
+  }
+  driveState.tokenClient.requestAccessToken({prompt:'consent'});
+ }catch(e){driveStatus('ログイン準備に失敗しました: '+driveError(e))}
+}
+async function driveFetch(url,options){
+ if(!driveState.accessToken)throw new Error('Google Driveにログインしてください');
+ const r=await fetch(url,Object.assign({},options||{},{headers:Object.assign({},options&&options.headers||{},{Authorization:'Bearer '+driveState.accessToken})}));
+ if(!r.ok){let detail='';try{const j=await r.json();detail=j.error&&j.error.message||''}catch(e){}if(r.status===401){driveState.accessToken='';throw new Error('ログインの有効期限が切れました。再度ログインしてください')}throw new Error('Drive API '+r.status+(detail?': '+detail:''))}
+ return r;
+}
+async function driveList(folderId){
+ let next='',all=[],page=0;
+ do{const q="'"+folderId.replace(/'/g,"\'")+"' in parents and trashed = false";let query=new URLSearchParams({q:q,fields:'nextPageToken,files(id,name,mimeType,size,modifiedTime,webContentLink)',pageSize:'1000',orderBy:'folder,name',supportsAllDrives:'true',includeItemsFromAllDrives:'true'});if(next)query.set('pageToken',next);
+  const resp=await driveFetch('https://www.googleapis.com/drive/v3/files?'+query.toString());const data=await resp.json();all.push(...(data.files||[]));next=data.nextPageToken||'';page++;
+ }while(next&&page<5);
+ return all.filter(f=>f.mimeType==='application/vnd.google-apps.folder'||driveAudioFile(f));
+}
+async function driveBrowse(folderId,name,reset){
+ if(driveState.loading)return;
+ driveState.loading=true;driveStatus('フォルダーを読み込んでいます…');
+ try{const items=await driveList(folderId);if(reset===true)driveState.history=[];else if(reset==='back')driveState.history.pop();else driveState.history.push({id:driveState.folderId,name:driveState.folderName});driveState.folderId=folderId;driveState.folderName=name;driveState.items=items;renderDriveFolder();driveStatus(name+'：'+items.filter(driveAudioFile).length+'曲、'+items.filter(x=>x.mimeType==='application/vnd.google-apps.folder').length+'フォルダー');}
+ catch(e){driveStatus('フォルダーを開けません: '+driveError(e))}
+ finally{driveState.loading=false}
+}
+function renderDriveFolder(){
+ const host=$('driveFolderList');host.replaceChildren();$('driveBreadcrumb').textContent='☁ '+driveState.folderName;
+ if(!driveState.items.length){let d=document.createElement('div');d.className='empty';d.textContent='このフォルダーには対応する音声ファイルやフォルダーがありません';host.append(d);return}
+ const folders=driveState.items.filter(x=>x.mimeType==='application/vnd.google-apps.folder');const files=driveState.items.filter(driveAudioFile);
+ for(const f of folders){let row=document.createElement('div');row.className='drive-row';const title=document.createElement('span');title.className='drive-title';title.textContent='📁 '+f.name;const b=document.createElement('button');b.className='action';b.textContent='開く';b.onclick=()=>driveBrowse(f.id,f.name,false);row.append(title,b);host.append(row)}
+ for(const f of files){let row=document.createElement('div');row.className='drive-row';const title=document.createElement('span');title.className='drive-title';title.textContent='♫ '+f.name;const info=document.createElement('span');info.className='drive-meta';info.textContent=f.size?Math.round(Number(f.size)/1048576*10)/10+'MB':'';let b=document.createElement('button');b.className='action';b.textContent='再生';b.onclick=()=>{const i=driveAddTrack(f);closeSheet();loadTrack(i,true)};row.append(title,info,b);host.append(row)}
+}
+function driveAddTrack(f,quiet=false){
+ const index=tracks.findIndex(t=>t.driveId===f.id);if(index>=0)return index;
+ const names=decodeName(f.name||'Google Drive音楽');
+ tracks.push({blob:null,title:names.title,artist:names.artist||'Google Drive',uri:null,saved:false,id:null,driveId:f.id,driveMime:f.mimeType||'audio/mpeg',driveSize:Number(f.size||0)});
+ if(!quiet)updateTrack();return tracks.length-1;
+}
+async function driveGetTrackUri(t){
+ if(t.uri)return t.uri;
+ if(t.driveSize>150*1048576)throw new Error('150MBを超える音楽ファイルはこの方式では読み込めません');
+ driveStatus('曲をダウンロードしています: '+t.title);
+ const r=await driveFetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(t.driveId)+'?alt=media');
+ const blob=await r.blob();if(blob.size>150*1048576)throw new Error('ファイルが大きすぎます');
+ t.blob=blob;t.uri=URL.createObjectURL(blob);driveStatus('曲を読み込みました: '+t.title);return t.uri;
+}
+function driveLogout(){if(driveState.accessToken&&window.google?.accounts?.oauth2){try{google.accounts.oauth2.revoke(driveState.accessToken,()=>{})}catch(e){}}driveState.accessToken='';driveState.items=[];driveState.history=[];driveState.folderId='root';driveState.folderName='マイドライブ';renderDriveFolder();driveStatus('接続解除しました。保存済みのローカル音楽はそのままです。')}
+$('driveButton').addEventListener('click',()=>openSheet('drive'));
+$('driveConnect').addEventListener('click',driveConnect);
+$('driveLogout').addEventListener('click',driveLogout);
+$('driveOpenFolder').addEventListener('click',()=>{const id=driveIdFromInput($('driveFolderInput').value);if(!id){driveStatus('有効なフォルダーURLまたはIDを入力してください');return}driveBrowse(id,'指定フォルダー',true)});
+$('driveRoot').addEventListener('click',()=>driveBrowse('root','マイドライブ',true));
+$('driveBack').addEventListener('click',()=>{const last=driveState.history[driveState.history.length-1];if(last)driveBrowse(last.id,last.name,'back');else driveBrowse('root','マイドライブ',true)});
+$('driveAddAll').addEventListener('click',()=>{let n=0;for(const f of driveState.items.filter(driveAudioFile)){if(!tracks.some(t=>t.driveId===f.id)){driveAddTrack(f);n++}}driveStatus(n+'曲を一覧に追加しました。再生時に読み込みます。')});
+$('driveSetPreferred').addEventListener('click',()=>{
+ if(!driveState.accessToken){driveSyncStatus('先にGoogleにログインしてフォルダーを開いてください。');return}
+ if(!driveState.folderId||driveState.folderId==='root'){driveSyncStatus('マイドライブ直下ではなく、音楽専用フォルダーを開いてから登録してください。');return}
+ drivePreferred={id:driveState.folderId,name:driveState.folderName};driveSavePreference();updatePreferredUI();driveSyncStatus('「'+drivePreferred.name+'」を音楽フォルダーとして登録しました。');driveSyncPreferred();
+});
+$('driveRefreshPreferred').addEventListener('click',()=>driveSyncPreferred());
+$('driveForgetPreferred').addEventListener('click',()=>{if(!confirm('登録した音楽フォルダーの設定を解除しますか？追加済みの曲は残ります。'))return;drivePreferred=null;driveSavePreference();updatePreferredUI();driveSyncStatus('音楽フォルダーの登録を解除しました。')});
+$('driveAutoImport').addEventListener('change',e=>{driveAutoImport=!!e.target.checked;try{localStorage.setItem(DRIVE_AUTO_KEY,String(driveAutoImport))}catch(e){}driveSyncStatus(driveAutoImport?'次回Googleログイン後に登録フォルダーを自動読込します。':'自動読込はOFFです。更新ボタンは引き続き使えます。')});
+updatePreferredUI();
+try{$('driveClientId').value=localStorage.getItem('carrozzeria_drive_client_id')||''}catch(e){}
+// ログインボタンを押した瞬間にポップアップを開けるよう、GISを事前読込する。
+driveLoadGIS().catch(()=>{});
+
 updateModeUI();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(()=>{}))}
 })()

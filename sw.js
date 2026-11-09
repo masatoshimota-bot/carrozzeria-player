@@ -1,5 +1,5 @@
-/* carrozzeria U2-PLUS v4: old-display compatibility + reliable asset updates */
-const CACHE='carrozzeria-u2plus-mic-v4';
+/* carrozzeria U2-PLUS drive-v1: old-display compatibility + reliable asset updates */
+const CACHE='carrozzeria-u2plus-mic-drive-v2';
 const ASSETS=['./','./index.html','./faceplate.jpg','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.indexOf('carrozzeria-u2plus-mic-')===0&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
